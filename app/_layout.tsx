@@ -1,29 +1,36 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { AuthProvider, useAuthBootstrapReady } from '@/src/providers/AuthProvider';
+import { ThemeProvider } from '@/src/providers/ThemeProvider';
+import { Outfit_400Regular as Outfit, Outfit_600SemiBold as OutfitSemi } from '@expo-google-fonts/outfit';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Slot } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { useEffect } from 'react';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+export default function Root() {
+  const [fontsLoaded] = useFonts({ Outfit, OutfitSemi });
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <Gate ready={fontsLoaded} />
+      </ThemeProvider>
+    </AuthProvider>
+  );
+}
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+function Gate({ ready }: { ready: boolean }) {
+  const authReady = useAuthBootstrapReady();
+  const allReady = ready && authReady;
+
+  useEffect(() => { if (allReady) SplashScreen.hideAsync(); }, [allReady]);
+  if (!allReady) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <>
+      <StatusBar style="dark" />{/* dark text on light bg */}
+      <Slot />
+    </>
   );
 }
