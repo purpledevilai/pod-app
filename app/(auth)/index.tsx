@@ -1,11 +1,13 @@
 import { Button } from '@/src/components/ui/Button';
 import { Text } from '@/src/components/ui/Text';
+import { useContent } from '@/src/providers/ContentProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { router } from 'expo-router';
 import { Image, StyleSheet, View } from 'react-native';
 
 export default function StartScreen() {
   const { colors, space } = useTheme();
+  const { copy } = useContent();
 
   return (
     <View style={[styles.container, { paddingHorizontal: space.lg }]}>
@@ -22,7 +24,7 @@ export default function StartScreen() {
           size={30}
           style={styles.tagline}
         >
-          Everything{'\n'}becomes{'\n'}something.
+          {copy.screens.start.tagline}
         </Text>
       </View>
 
@@ -31,7 +33,7 @@ export default function StartScreen() {
 
       {/* Bottom CTA */}
       <View style={{ paddingBottom: space.lg }}>
-        <Button title="Get Started" onPress={() => router.push('/(auth)/welcome')} />
+        <Button title={copy.screens.start.cta} onPress={() => router.push('/(auth)/welcome')} />
       </View>
     </View>
   );

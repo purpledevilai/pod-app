@@ -1,4 +1,5 @@
 import { AuthProvider, useAuthBootstrapReady } from '@/src/providers/AuthProvider';
+import { ContentProvider } from '@/src/providers/ContentProvider';
 import { ThemeProvider } from '@/src/providers/ThemeProvider';
 import { Outfit_400Regular as Outfit, Outfit_600SemiBold as OutfitSemi } from '@expo-google-fonts/outfit';
 import { useFonts } from 'expo-font';
@@ -14,7 +15,9 @@ export default function Root() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <Gate ready={fontsLoaded} />
+        <ContentProvider>
+          <Gate ready={fontsLoaded} />
+        </ContentProvider>
       </ThemeProvider>
     </AuthProvider>
   );

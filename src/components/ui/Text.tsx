@@ -1,3 +1,4 @@
+// src/components/ui/Text.tsx
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { Text as RNText, StyleSheet, TextProps, TextStyle } from 'react-native';
 
@@ -5,20 +6,22 @@ type Props = TextProps & {
   weight?: 'regular' | 'semibold';
   color?: string;
   size?: number;
+  lh?: number; // optional explicit lineHeight
 };
 
-export function Text({ style, weight = 'regular', color, size, ...rest }: Props) {
+export function Text({ style, weight = 'regular', color, size, lh, ...rest }: Props) {
   const { fonts, colors } = useTheme();
   const family = weight === 'semibold' ? fonts.semibold : fonts.regular;
+
+  const fontSize = size ?? 16;
+  const lineHeight = lh ?? (size ? Math.round(fontSize * 1.25) : 22); // auto
 
   return (
     <RNText
       {...rest}
       style={[
         styles.base,
-        { color: color ?? colors.text, fontFamily: family } as TextStyle,
-        // ✅ only add when defined; never returns 0
-        size !== undefined ? ({ fontSize: size } as TextStyle) : undefined,
+        { fontFamily: family, color: color ?? colors.text, fontSize, lineHeight } as TextStyle,
         style as any,
       ]}
     />
@@ -26,5 +29,5 @@ export function Text({ style, weight = 'regular', color, size, ...rest }: Props)
 }
 
 const styles = StyleSheet.create({
-  base: { fontSize: 16, lineHeight: 22 },
+  base: {}, // no fixed lineHeight here
 });
