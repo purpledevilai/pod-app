@@ -2,10 +2,12 @@ import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { Markdown } from '@/src/components/ui/Markdown';
 import { Text } from '@/src/components/ui/Text';
-import { useSession } from '@/src/providers/AuthProvider';
 import { useContent } from '@/src/providers/ContentProvider';
+import { useAuthStore } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { useHeaderHeight } from '@react-navigation/elements';
+import { router } from 'expo-router';
+import { observer } from 'mobx-react-lite';
 import { useRef, useState } from 'react';
 import {
     KeyboardAvoidingView,
@@ -16,10 +18,10 @@ import {
     View,
 } from 'react-native';
 
-export default function EmailScreen() {
+export default observer(function EmailScreen() {
     const { space } = useTheme();
     const { copy } = useContent();
-    const { startEmailLogin } = useSession();
+    const auth = useAuthStore();
     const [email, setEmail] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | undefined>();
@@ -31,11 +33,13 @@ export default function EmailScreen() {
     async function onSubmit() {
         if (!valid || submitting) return;
         try {
+            console.log("Submitting email:", email);
             setSubmitting(true);
             setError(undefined);
-            await startEmailLogin(email.trim());
-            // router.push({ pathname: '/(auth)/verify', params: { email: email.trim() } });
-        } catch {
+            await auth.requestCode(email.trim());
+            router.push({ pathname: '/(auth)/verify', params: { email: email.trim() } });
+        } catch(e) {
+            console.log("Error requesting code:", e);
             setError('Something went wrong. Please try again.');
         } finally {
             setSubmitting(false);
@@ -93,7 +97,7 @@ export default function EmailScreen() {
             </View>
         </KeyboardAvoidingView>
     );
-}
+})
 
 const styles = StyleSheet.create({
     flex: { flex: 1 },

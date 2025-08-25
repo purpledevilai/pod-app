@@ -1,14 +1,15 @@
 // app/(auth)/_layout.tsx
-import { useSession } from '@/src/providers/AuthProvider';
+import { useAuthStore } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, Stack } from 'expo-router';
+import { observer } from 'mobx-react-lite';
 import { Image, Pressable } from 'react-native';
 
-export default function AuthLayout() {
-  const { session } = useSession();
+export default observer(function AuthLayout() {
+  const auth = useAuthStore();
   const { colors } = useTheme();
-  if (session) return <Redirect href="/(app)" />;
+  if (auth.session) return <Redirect href="/(app)" />;
 
   return (
     <Stack
@@ -43,4 +44,4 @@ export default function AuthLayout() {
       {/* e.g. email, verify ... */}
     </Stack>
   );
-}
+})

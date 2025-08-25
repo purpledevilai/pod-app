@@ -30,6 +30,14 @@ export const copy = {
             ctaSubmitting: 'Sending…',
             errorInvalid: 'Please enter a valid email.',
         },
+        verify: {
+            title: "Check your inbox",
+            bodyMd: "We’ve sent a 6-digit code to your email.\n\nEnter it below to confirm your spot in the Pod community.\n\nCan’t find the code? Check your spam or junk folder — or tap below to resend it.",
+            resend: "resend code",
+            useDifferentEmail: "use a different email",
+            ctaSubmitting: 'Verifying…',
+            ctaContinue: 'Verify and Continue',
+        }
     },
 } as const;
 export type AppCopy = typeof copy;
