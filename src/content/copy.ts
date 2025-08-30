@@ -37,6 +37,23 @@ export const copy = {
             useDifferentEmail: "use a different email",
             ctaSubmitting: 'Verifying…',
             ctaContinue: 'Verify and Continue',
+        },
+        foreword: {
+            title: "Welcome, we're glad you're here",
+            foreword: "Foreword",
+            bodyMd: `When you place something in a recycling bin, it’s not the end — it’s the beginning.
+
+Your recycling is taken to a Material Recovery Facility (MRF), where it’s sorted — either by advanced machines or by hand.
+But here’s the catch: not all MRFs accept the same materials. It depends on your council and their local processing capabilities. That’s why some areas have glass-only bins, and others don’t.
+
+The challenge?
+Material quality. The cleaner and more accurate the sorting, the more valuable those materials become — and the more likely they are to be reused.
+
+And it all starts with you — at the Point of Disposal.
+That’s what POD stands for.
+Because when you know what to do in the moment, you create a cleaner stream — and a stronger circular economy.
+`,
+            ctaContinue: 'Got it — show me how',
         }
     },
 } as const;

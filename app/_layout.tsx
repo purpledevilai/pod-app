@@ -1,6 +1,5 @@
-// app/_layout.tsx
 import { ContentProvider } from '@/src/providers/ContentProvider';
-import { StoreProvider, useRootReady } from '@/src/providers/StoreProvider';
+import { StoreProvider, useStores } from '@/src/providers/StoreProvider';
 import { ThemeProvider } from '@/src/providers/ThemeProvider';
 import { Outfit_400Regular as Outfit, Outfit_600SemiBold as OutfitSemi } from '@expo-google-fonts/outfit';
 import { useFonts } from 'expo-font';
@@ -13,24 +12,26 @@ import { useEffect } from 'react';
 SplashScreen.preventAutoHideAsync();
 
 export default function Root() {
-  const [fontsLoaded] = useFonts({ Outfit, OutfitSemi });
-
   return (
     <StoreProvider>
       <ThemeProvider>
         <ContentProvider>
-          <Gate ready={fontsLoaded} />
+          <Gate />
         </ContentProvider>
       </ThemeProvider>
     </StoreProvider>
   );
 }
 
-const Gate = observer(function Gate({ ready }: { ready: boolean }) {
-  const storesReady = useRootReady();
-  const allReady = ready && storesReady;
+const Gate = observer(function Gate() {
+  const storesReady = useStores().bootstrapped;
+  const [fontsLoaded] = useFonts({ Outfit, OutfitSemi });
+  const allReady = storesReady && fontsLoaded;
 
-  useEffect(() => { if (allReady) SplashScreen.hideAsync(); }, [allReady]);
+  useEffect(() => {
+    if (allReady) SplashScreen.hideAsync();
+  }, [allReady]);
+  
   if (!allReady) return null;
 
   return (

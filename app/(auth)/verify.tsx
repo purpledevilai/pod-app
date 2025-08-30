@@ -2,7 +2,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Markdown } from '@/src/components/ui/Markdown';
 import { Text } from '@/src/components/ui/Text';
 import { useContent } from '@/src/providers/ContentProvider';
-import { useAuthStore } from '@/src/providers/StoreProvider';
+import { useStores } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { router } from 'expo-router';
@@ -19,7 +19,7 @@ import {
 export default function VerifyScreen() {
     const { space } = useTheme();
     const { copy } = useContent();
-    const auth = useAuthStore();
+    const authStore = useStores().authStore;
     const [code, setCode] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | undefined>();
@@ -32,13 +32,13 @@ export default function VerifyScreen() {
         try {
             setSubmitting(true);
             setError(undefined);
-            const result = await auth.verifyCode(code);
+            const result = await authStore.verifyCode(code);
             if (result.status === 'logged_in') {
                 console.log("Logged in, redirecting to app");
                 router.replace('/(app)');
             } else if (result.status === 'needs_account') {
                 console.log("Needs account, redirecting to create account");
-                //router.push('/(auth)/create-account');
+                router.push('/(auth)/foreword');
             } else {
                 console.log("Invalid code result:", result);
                 setError(result.message || 'Invalid code, try again.');
@@ -53,8 +53,8 @@ export default function VerifyScreen() {
 
     async function resend() {
         try {
-            if (!auth.verifyingEmail) throw new Error("No email to verify");
-            await auth.requestCode(auth.verifyingEmail)
+            if (!authStore.email) throw new Error("No email to verify");
+            await authStore.sendEmailVerification(authStore.email)
         } catch {
             setError('Could not resend code. Try again.');
         }

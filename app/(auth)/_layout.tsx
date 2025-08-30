@@ -1,5 +1,5 @@
 // app/(auth)/_layout.tsx
-import { useAuthStore } from '@/src/providers/StoreProvider';
+import { useStores } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, Stack } from 'expo-router';
@@ -7,9 +7,9 @@ import { observer } from 'mobx-react-lite';
 import { Image, Pressable } from 'react-native';
 
 export default observer(function AuthLayout() {
-  const auth = useAuthStore();
+  const authStore = useStores().authStore;
   const { colors } = useTheme();
-  if (auth.session) return <Redirect href="/(app)" />;
+  if (authStore.isLoggedIn) return <Redirect href="/(app)" />;
 
   return (
     <Stack
@@ -24,7 +24,7 @@ export default observer(function AuthLayout() {
         headerTitle: () => (
           <Image
             source={require('@/assets/images/pod.png')}
-            style={{ width: 80, height: 80 }}
+            style={{ width: 80, height: 60 }}
             resizeMode="contain"
           />
         ),

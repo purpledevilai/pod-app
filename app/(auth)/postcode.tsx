@@ -3,7 +3,6 @@ import { Input } from '@/src/components/ui/Input';
 import { Markdown } from '@/src/components/ui/Markdown';
 import { Text } from '@/src/components/ui/Text';
 import { useContent } from '@/src/providers/ContentProvider';
-import { useStores } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { router } from 'expo-router';
@@ -18,25 +17,22 @@ import {
     View,
 } from 'react-native';
 
-export default observer(function EmailScreen() {
+export default observer(function Postcode() {
     const { space } = useTheme();
     const { copy } = useContent();
-    const authStore = useStores().authStore;
     const [email, setEmail] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | undefined>();
     const inputRef = useRef<TextInput>(null);
 
     const headerHeight = useHeaderHeight();
-    const valid = isEmail(email);
 
     async function onSubmit() {
-        if (!valid || submitting) return;
+        if (submitting) return;
         try {
             console.log("Submitting email:", email);
             setSubmitting(true);
             setError(undefined);
-            await authStore.sendEmailVerification(email.trim());
             router.push({ pathname: '/(auth)/verify', params: { email: email.trim() } });
         } catch(e) {
             console.log("Error requesting code:", e);
@@ -82,7 +78,7 @@ export default observer(function EmailScreen() {
                             returnKeyType="done"
                             onSubmitEditing={onSubmit}
                             placeholder={copy.screens.email.placeholder}
-                            error={!valid && email.length > 0 ? copy.screens.email.errorInvalid : error}
+                            //error={!valid && email.length > 0 ? copy.screens.email.errorInvalid : error}
                         />
                     </View>
                 </ScrollView>
@@ -91,7 +87,7 @@ export default observer(function EmailScreen() {
                     <Button
                         title={submitting ? copy.screens.email.ctaSubmitting : copy.screens.email.ctaSend}
                         onPress={onSubmit}
-                        style={{ opacity: valid && !submitting ? 1 : 0.5 }}
+                        style={{ opacity: !submitting ? 1 : 0.5 }}
                     />
                 </View>
             </View>
@@ -103,11 +99,7 @@ const styles = StyleSheet.create({
     flex: { flex: 1 },
     container: { flex: 1 },
     scrollContent: { flexGrow: 1 },
-    title: { marginBottom: 12, lineHeight: 48 },
+    title: { marginBottom: 12, lineHeight: 48 }, // avoids clipping for size=40
     fieldWrap: { marginTop: 28 },
     ctaWrap: {},
 });
-
-function isEmail(s: string) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
-}

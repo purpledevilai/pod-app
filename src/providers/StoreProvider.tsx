@@ -1,4 +1,3 @@
-// src/providers/StoreProvider.tsx
 import { rootStore, type RootStore } from '@/src/stores/root-store';
 import React, { createContext, useContext, useEffect } from 'react';
 
@@ -11,6 +10,3 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useStores = () => useContext(StoreCtx);
-export const useRootStore = () => useStores();
-export const useRootReady = () => useStores().bootstrapped;
-export const useAuthStore = () => useStores().auth;
