@@ -28,7 +28,7 @@ export default function Foreword() {
 
       {/* CTA pinned to bottom */}
       <View style={{ paddingBottom: space.lg }}>
-        <Button title={copy.screens.foreword.ctaContinue} onPress={() => router.push('/(auth)/email')} />
+        <Button title={copy.screens.foreword.ctaContinue} onPress={() => router.push('/(auth)/postcode')} />
       </View>
     </View>
   );

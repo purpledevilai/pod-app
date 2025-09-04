@@ -1,3 +1,4 @@
+
 export const copy = {
     screens: {
         start: {
@@ -54,6 +55,26 @@ That’s what POD stands for.
 Because when you know what to do in the moment, you create a cleaner stream — and a stronger circular economy.
 `,
             ctaContinue: 'Got it — show me how',
+        },
+        postcode: {
+            title: "What's your post code?",
+            bodyMd: "With your post code, we can look up your council — and the specific bin systems available in your area.",
+            placeholder: 'Post code',
+            ctaLookUp: 'Look Up Councils',
+            ctaSubmitting: 'Looking up…',
+            errorInvalid: 'Please enter a valid post code.',
+        },
+        council: {
+            title: "Which council are you in?",
+            subtitle: "We found a few councils associated with that post code.",
+            description: "Select yours to get the most accurate bin guidance.",
+            ctaContinue: "Look up bin systems",
+            ctaSubmitting: "Looking up..."
+        },
+        binSystem: {
+            title: "Which bin system do you use?",
+            ctaContinue: "Choose bin system",
+            ctaSubmitting: "Choosing..."
         }
     },
 } as const;

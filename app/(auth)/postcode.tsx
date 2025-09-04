@@ -3,43 +3,31 @@ import { Input } from '@/src/components/ui/Input';
 import { Markdown } from '@/src/components/ui/Markdown';
 import { Text } from '@/src/components/ui/Text';
 import { useContent } from '@/src/providers/ContentProvider';
+import { useStores } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { router } from 'expo-router';
 import { observer } from 'mobx-react-lite';
-import { useRef, useState } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     StyleSheet,
-    TextInput,
-    View,
+    View
 } from 'react-native';
 
-export default observer(function Postcode() {
+export default observer(function PostcodeScreen() {
     const { space } = useTheme();
     const { copy } = useContent();
-    const [email, setEmail] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | undefined>();
-    const inputRef = useRef<TextInput>(null);
-
+    const acStore = useStores().accountCreationStore;
     const headerHeight = useHeaderHeight();
 
     async function onSubmit() {
-        if (submitting) return;
-        try {
-            console.log("Submitting email:", email);
-            setSubmitting(true);
-            setError(undefined);
-            router.push({ pathname: '/(auth)/verify', params: { email: email.trim() } });
-        } catch(e) {
-            console.log("Error requesting code:", e);
-            setError('Something went wrong. Please try again.');
-        } finally {
-            setSubmitting(false);
-        }
+        if (!acStore.postcodeValid || acStore.councilLookUpLoading) return;
+        console.log("Submitting postcode", acStore.postcode);
+        await acStore.lookUpCouncils();
+        if (acStore.councilLookUpError) return;
+        router.push({ pathname: '/(auth)/council' });
     }
 
     return (
@@ -61,33 +49,31 @@ export default observer(function Postcode() {
                     ]}
                 >
                     <Text weight="semibold" size={40} style={styles.title}>
-                        {copy.screens.email.title}
+                        {copy.screens.postcode.title}
                     </Text>
 
-                    <Markdown>{copy.screens.email.bodyMd}</Markdown>
+                    <Markdown>{copy.screens.postcode.bodyMd}</Markdown>
 
                     <View style={styles.fieldWrap}>
                         <Input
-                            ref={inputRef}
-                            value={email}
-                            onChangeText={setEmail}
-                            autoCapitalize="none"
+                            value={acStore.postcode || ''}
+                            onChangeText={acStore.setPostcode}
+                            autoCapitalize="characters"
                             autoCorrect={false}
-                            keyboardType="email-address"
-                            textContentType="emailAddress"
+                            keyboardType="numeric"
                             returnKeyType="done"
                             onSubmitEditing={onSubmit}
-                            placeholder={copy.screens.email.placeholder}
-                            //error={!valid && email.length > 0 ? copy.screens.email.errorInvalid : error}
+                            placeholder={copy.screens.postcode.placeholder}
+                            error={!acStore.postcodeValid && acStore.postcode?.length || 0 > 0 ? copy.screens.postcode.errorInvalid : acStore.councilLookUpError || undefined}
                         />
                     </View>
                 </ScrollView>
 
                 <View style={[styles.ctaWrap, { paddingHorizontal: space.lg, paddingBottom: space.lg }]}>
                     <Button
-                        title={submitting ? copy.screens.email.ctaSubmitting : copy.screens.email.ctaSend}
+                        title={acStore.councilLookUpLoading ? copy.screens.postcode.ctaSubmitting : copy.screens.postcode.ctaLookUp}
                         onPress={onSubmit}
-                        style={{ opacity: !submitting ? 1 : 0.5 }}
+                        style={{ opacity: acStore.postcodeValid && !acStore.councilLookUpLoading ? 1 : 0.5 }}
                     />
                 </View>
             </View>
@@ -99,7 +85,7 @@ const styles = StyleSheet.create({
     flex: { flex: 1 },
     container: { flex: 1 },
     scrollContent: { flexGrow: 1 },
-    title: { marginBottom: 12, lineHeight: 48 }, // avoids clipping for size=40
+    title: { marginBottom: 12, lineHeight: 48 },
     fieldWrap: { marginTop: 28 },
     ctaWrap: {},
 });
