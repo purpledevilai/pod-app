@@ -5,6 +5,7 @@ import { useStores } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { BinSystem } from '@/src/services/api/types/binsystem';
 import { useHeaderHeight } from '@react-navigation/elements';
+import { router } from 'expo-router';
 import { observer } from 'mobx-react-lite';
 import {
     Image,
@@ -39,14 +40,13 @@ export default observer(function BinSystemScreen() {
     }
 
     async function onSubmit() {
-        if (!acStore.selectedBinSystem || acStore.binSystemLookUpLoading) return;
-        console.log("Submitting bin system", acStore.selectedBinSystem.id);
+        if (!acStore.selectedBinSystem || acStore.binSystemLookUpLoading || acStore.createAccountLoading) return;
+        console.log("Creating account with bin system", acStore.selectedBinSystem.id);
         try {
-            
-            // Add any bin system selection logic here
-            //router.push('/(auth)/next-step'); // Navigate to next step
+            await acStore.createAccount();
+            router.push('/(app)/landing');
         } catch (error) {
-            console.log("Error submitting bin system:", error);
+            console.log("Error creating account:", error);
         } 
     }
 
@@ -58,7 +58,7 @@ export default observer(function BinSystemScreen() {
                     styles.binSystemItem,
                     {
                         borderColor: isSelected ? colors.primary : colors.muted,
-                        backgroundColor: isSelected ? colors.muted : colors.bg,
+                        backgroundColor: colors.bg,
                     }
                 ]}
                 onPress={() => onSelectBinSystem(binSystem)}
@@ -119,10 +119,15 @@ export default observer(function BinSystemScreen() {
 
                 <View style={[styles.ctaWrap, { paddingHorizontal: space.lg, paddingBottom: space.lg }]}>
                     <Button
-                        title={acStore.binSystemLookUpLoading ? copy.screens.binSystem.ctaSubmitting : copy.screens.binSystem.ctaContinue}
+                        title={acStore.createAccountLoading ? copy.screens.binSystem.ctaSubmitting : copy.screens.binSystem.ctaContinue}
                         onPress={onSubmit}
-                        style={{ opacity: acStore.selectedBinSystem && !acStore.binSystemLookUpLoading ? 1 : 0.5 }}
+                        style={{ opacity: acStore.selectedBinSystem && !acStore.createAccountLoading ? 1 : 0.5 }}
                     />
+                    {acStore.createAccountError && (
+                        <Text size={14} style={{ color: '#FF0000', textAlign: 'center', marginTop: space.sm }}>
+                            {acStore.createAccountError}
+                        </Text>
+                    )}
                 </View>
             </View>
         </KeyboardAvoidingView>

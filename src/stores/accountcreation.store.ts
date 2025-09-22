@@ -1,11 +1,15 @@
+import { setAuthTokens } from '@/src/services/api/_config/tokens';
+import { createAccount, CreateAccountResponse } from '@/src/services/api/auth/createaccount';
 import { binSystemsForCouncil, BinSystemsForCouncilResponse } from '@/src/services/api/binsystems/binsystemforcouncil';
 import { councilsForPostCode, CouncilsForPostcodeResponse } from '@/src/services/api/councils/councilsforpostcode';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { BinSystem } from '../services/api/types/binsystem';
 import { Council } from '../services/api/types/council';
+import { User } from '../services/api/types/user';
 
 export class AccountCreationStore {
     email: string | null = null;
+    createAccountToken: string | null = null;
 
     postcode: string | null = null;
     postcodeValid: Boolean = false;
@@ -18,6 +22,10 @@ export class AccountCreationStore {
     binSystemLookUpError: string | null = null;
     binSystems: BinSystem[] = [];
     selectedBinSystem: BinSystem | null = null;
+
+    createAccountLoading: boolean = false;
+    createAccountError: string | null = null;
+    createdUser: User | null = null;
 
     constructor() {
         makeAutoObservable(this, {}, { autoBind: true });
@@ -95,6 +103,48 @@ export class AccountCreationStore {
 
     setBinSystem(binSystem: BinSystem) {
         this.selectedBinSystem = binSystem;
+    }
+
+    setCreateAccountToken(token: string) {
+        this.createAccountToken = token;
+    }
+
+    createAccount = async () => {
+        try {
+            if (!this.createAccountToken || !this.selectedCouncilId || !this.selectedBinSystem) {
+                throw new Error("Missing required data for account creation");
+            }
+            
+            runInAction(() => { 
+                this.createAccountError = null;
+                this.createAccountLoading = true;
+            });
+
+            const response: CreateAccountResponse = await createAccount({
+                create_account_token: this.createAccountToken,
+                council_id: this.selectedCouncilId,
+                bin_system_id: this.selectedBinSystem.id
+            });
+
+            // Save tokens to secure storage
+            await setAuthTokens(response.access_token, response.refresh_token);
+
+            runInAction(() => { 
+                this.createdUser = response.user;
+            });
+
+            return response.user;
+        } catch (e) {
+            console.error("Error creating account:", e);
+            runInAction(() => { 
+                this.createAccountError = 'Failed to create account. Please try again.';
+            });
+            throw e;
+        } finally {
+            runInAction(() => { 
+                this.createAccountLoading = false;
+            });
+        }
     }
     
 }

@@ -44,8 +44,8 @@ export class AuthStore {
             });
 
             // If access and refresh tokens are returned, they are an existing user
-            if (res.auth_token && res.refresh_token) {
-                await setAuthTokens(res.auth_token, res.refresh_token);
+            if (res.access_token && res.refresh_token) {
+                await setAuthTokens(res.access_token, res.refresh_token);
                 runInAction(() => {
                     this.isLoggedIn = true;
                     this.challengeId = null;

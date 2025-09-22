@@ -77,9 +77,7 @@ export default observer(function CouncilScreen() {
                                         borderColor: acStore.selectedCouncilId === council.id 
                                             ? colors.primary 
                                             : colors.muted,
-                                        backgroundColor: acStore.selectedCouncilId === council.id 
-                                            ? colors.muted 
-                                            : colors.bg,
+                                        backgroundColor: colors.bg,
                                     }
                                 ]}
                                 onPress={() => onSelectCouncil(council.id)}

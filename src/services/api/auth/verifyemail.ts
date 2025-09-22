@@ -9,7 +9,7 @@ export interface VerifyEmailResponse {
     success: boolean;
     message: string;
     create_account_token: string | null;
-    auth_token: string | null;
+    access_token: string | null;
     refresh_token: string | null;
 }
 

@@ -19,7 +19,7 @@ import {
 export default function VerifyScreen() {
     const { space } = useTheme();
     const { copy } = useContent();
-    const authStore = useStores().authStore;
+    const { authStore, accountCreationStore } = useStores();
     const [code, setCode] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | undefined>();
@@ -38,6 +38,10 @@ export default function VerifyScreen() {
                 router.replace('/(app)');
             } else if (result.status === 'needs_account') {
                 console.log("Needs account, redirecting to create account");
+                // Pass the create account token to the account creation store
+                if (authStore.createAccountToken) {
+                    accountCreationStore.setCreateAccountToken(authStore.createAccountToken);
+                }
                 router.push('/(auth)/foreword');
             } else {
                 console.log("Invalid code result:", result);
