@@ -3,7 +3,7 @@ import { StoreProvider, useStores } from '@/src/providers/StoreProvider';
 import { ThemeProvider } from '@/src/providers/ThemeProvider';
 import { Outfit_400Regular as Outfit, Outfit_600SemiBold as OutfitSemi } from '@expo-google-fonts/outfit';
 import { useFonts } from 'expo-font';
-import { Slot } from 'expo-router';
+import { router, Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { observer } from 'mobx-react-lite';
@@ -24,13 +24,24 @@ export default function Root() {
 }
 
 const Gate = observer(function Gate() {
-  const storesReady = useStores().bootstrapped;
+  const { bootstrapped, authStore } = useStores();
   const [fontsLoaded] = useFonts({ Outfit, OutfitSemi });
-  const allReady = storesReady && fontsLoaded;
+  const allReady = bootstrapped && fontsLoaded;
 
   useEffect(() => {
     if (allReady) SplashScreen.hideAsync();
   }, [allReady]);
+
+  // Handle navigation based on auth state
+  useEffect(() => {
+    if (allReady) {
+      if (authStore.isLoggedIn) {
+        router.replace('/(app)');
+      } else {
+        router.replace('/(auth)');
+      }
+    }
+  }, [allReady, authStore.isLoggedIn]);
   
   if (!allReady) return null;
 

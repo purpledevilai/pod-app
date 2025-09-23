@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { jwtDecode } from 'jwt-decode';
 
 const KEYS = { 
     access_token: 'access_token',
@@ -33,3 +34,25 @@ export const clearAuthTokens = async () => {
 
 export const getAccessToken = () => ACCESS_TOKEN;
 export const getRefreshToken = () => REFRESH_TOKEN;
+
+export const isExpired = (token: string | null): boolean => {
+    if (!token) return true;
+    try {
+        const decoded = jwtDecode<{ exp: number }>(token);
+        const now = Math.floor(Date.now() / 1000);
+        return decoded.exp < now;
+    } catch (error) {
+        console.error('Error decoding token:', error);
+        return true; // If we can't decode it, consider it expired
+    }
+};
+
+export const decodeToken = (token: string | null) => {
+    if (!token) return null;
+    try {
+        return jwtDecode(token);
+    } catch (error) {
+        console.error('Error decoding token:', error);
+        return null;
+    }
+};

@@ -14,6 +14,6 @@ export interface VerifyEmailResponse {
 }
 
 export async function verifyEmail(params: VerifyEmailRequest): Promise<VerifyEmailResponse> {
-    const res = await apiClient.post('/verify-email', { ...params });
+    const res = await apiClient.post('/verify-email', { ...params }, { is_public: true });
     return res.data as VerifyEmailResponse;
 }

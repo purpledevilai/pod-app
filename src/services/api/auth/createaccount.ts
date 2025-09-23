@@ -14,6 +14,6 @@ export interface CreateAccountResponse {
 }
 
 export async function createAccount(params: CreateAccountRequest): Promise<CreateAccountResponse> {
-    const res = await apiClient.post('/create-account', { ...params });
+    const res = await apiClient.post('/create-account', { ...params }, { is_public: true });
     return res.data as CreateAccountResponse;
 }

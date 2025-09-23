@@ -6,6 +6,6 @@ export interface CouncilsForPostcodeResponse {
 }
 
 export async function councilsForPostCode(postcode: string): Promise<CouncilsForPostcodeResponse> {
-    const res = await apiClient.get(`/councils-for-postcode/${postcode}`);
+    const res = await apiClient.get(`/councils-for-postcode/${postcode}`, { is_public: true });
     return res.data as CouncilsForPostcodeResponse;
 }

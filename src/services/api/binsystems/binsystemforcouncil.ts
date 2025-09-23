@@ -6,6 +6,6 @@ export interface BinSystemsForCouncilResponse {
 }
 
 export async function binSystemsForCouncil(councilId: string): Promise<BinSystemsForCouncilResponse> {
-    const res = await apiClient.get(`/bin-systems-for-council/${councilId}`);
+    const res = await apiClient.get(`/bin-systems-for-council/${councilId}`, { is_public: true });
     return res.data as BinSystemsForCouncilResponse;
 }

@@ -9,6 +9,6 @@ export interface SendEmailVerificationResponse {
 }
 
 export async function sendEmailVerification(params: SendEmailVerificationRequest): Promise<SendEmailVerificationResponse> {
-    const res = await apiClient.post('/send-email-verification', { ...params });
+    const res = await apiClient.post('/send-email-verification', { ...params }, { is_public: true });
     return res.data as SendEmailVerificationResponse;
 }
