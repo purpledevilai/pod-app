@@ -58,6 +58,7 @@ export default observer(function BinSystemScreen() {
                     styles.binSystemItem,
                     {
                         borderColor: isSelected ? colors.primary : colors.muted,
+                        borderWidth: isSelected ? 2 : 1,
                         backgroundColor: colors.bg,
                     }
                 ]}

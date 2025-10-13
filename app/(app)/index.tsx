@@ -1,7 +1,7 @@
 import { AIMessageDisplay } from '@/src/components/agentroom/AIMessageDisplay';
 import { AudioPlayer } from '@/src/components/agentroom/AudioPlayer';
-import { Orb } from '@/src/components/agentroom/Orb';
 import { TranscriptionDisplay } from '@/src/components/agentroom/TranscriptionDisplay';
+import { Orb } from '@/src/components/Orb';
 import { Button } from '@/src/components/ui/Button';
 import { Text } from '@/src/components/ui/Text';
 import { useStores } from '@/src/providers/StoreProvider';
@@ -9,7 +9,7 @@ import { useTheme } from '@/src/providers/ThemeProvider';
 import { createDefaultAgentContext } from '@/src/services/api/context/createcontext';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, StyleSheet, View } from 'react-native';
 
 /**
  * Home Screen - Main voice conversation interface
@@ -95,18 +95,6 @@ export default observer(function Home() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.centerContent}>
-          <Text weight="semibold" size={32} style={styles.title}>
-            Voice Assistant
-          </Text>
-          
-          <Text 
-            weight="regular" 
-            size={16} 
-            style={[styles.subtitle, { color: colors.muted }]}
-          >
-            Start a conversation with your AI agent
-          </Text>
-
           {contextError && (
             <View style={[styles.errorContainer, { backgroundColor: '#FEE2E2' }]}>
               <Text weight="semibold" size={14} style={{ color: '#DC2626' }}>
@@ -120,15 +108,6 @@ export default observer(function Home() {
             onPress={handleStartConversation}
             style={{ opacity: isCreatingContext ? 0.5 : 1 }}
           />
-
-          <TouchableOpacity 
-            onPress={() => authStore.logout()}
-            style={styles.logoutButton}
-          >
-            <Text weight="semibold" size={14} style={{ color: colors.muted }}>
-              Logout
-            </Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -141,7 +120,7 @@ export default observer(function Home() {
       <AudioPlayer stream={inboundAudioStream} />
 
       {/* Debug Status Messages */}
-      <ScrollView 
+      {/* <ScrollView 
         style={styles.debugContainer}
         contentContainerStyle={styles.debugContent}
       >
@@ -153,7 +132,7 @@ export default observer(function Home() {
           initializationError={agentRoomStore.initializationError}
           audioMuted={agentRoomStore.audioMuted}
         />
-      </ScrollView>
+      </ScrollView> */}
 
       {/* Calibration Overlay */}
       {agentRoomStore.isCalibrating && (
@@ -166,35 +145,33 @@ export default observer(function Home() {
 
       {/* Main Conversation UI */}
       <View style={styles.conversationContainer}>
-        {/* User Transcription (Above Orb) */}
-        <TranscriptionDisplay text={agentRoomStore.currentDetectedSpeech} />
-
-        {/* Central Orb */}
-        <View style={styles.orbContainer}>
-          <Orb
-            isConnecting={agentRoomStore.isConnecting}
-            isUserSpeaking={agentRoomStore.isUserSpeaking}
-            isAISpeaking={!!agentRoomStore.currentlySpeakingSentenceId}
-            size={120}
-          />
-        </View>
-
-        {/* AI Messages (Below Orb) */}
+        {/* AI Messages (Top) */}
         <AIMessageDisplay
           messages={agentRoomStore.aiMessages}
           currentlySpeakingSentenceId={agentRoomStore.currentlySpeakingSentenceId}
           visible={agentRoomStore.showAIMessages}
         />
+
+        {/* Central Orb */}
+        <View style={styles.orbContainer}>
+          <Orb
+            volume={agentRoomStore.isUserSpeaking || !!agentRoomStore.currentlySpeakingSentenceId ? 1 : 0}
+            size={120}
+          />
+        </View>
+
+        {/* User Transcription (Below Orb) */}
+        <TranscriptionDisplay text={agentRoomStore.currentDetectedSpeech} />
       </View>
 
       {/* Controls */}
       <View style={styles.controls}>
-        <Button
+        {/* <Button
           title={agentRoomStore.audioMuted ? "Unmute Mic" : "Mute Mic"}
           onPress={handleToggleMicrophone}
           style={{ opacity: agentRoomStore.isConnecting ? 0.5 : 1 }}
         />
-        <View style={{ height: 12 }} />
+        <View style={{ height: 12 }} /> */}
         <Button
           title="End Conversation"
           onPress={handleEndConversation}

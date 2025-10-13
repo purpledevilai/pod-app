@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     scrollContent: { flexGrow: 1 },
     title: { marginBottom: 12, lineHeight: 48 },
     fieldWrap: { marginTop: 28 },
-    ctaWrap: {},
+    ctaWrap: {paddingTop: 28},
 });
 
 function isEmail(s: string) {
