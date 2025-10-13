@@ -26,3 +26,5 @@ apiClient.interceptors.request.use(async (cfg) => {
     return cfg;
 });
 
+export const ajentifyApiClient = axios.create({ baseURL: process.env.EXPO_PUBLIC_AGENTIFY_API || 'https://api.ajentify.com' });
+
