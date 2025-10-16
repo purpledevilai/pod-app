@@ -139,14 +139,14 @@ export default observer(function Home() {
 
       {/* Main Conversation UI */}
       <View style={styles.conversationContainer}>
-        {/* AI Messages (Top) */}
+        {/* AI Messages (Top - Absolutely Positioned) */}
         <AIMessageDisplay
           messages={agentRoomStore.aiMessages}
           currentlySpeakingSentenceId={agentRoomStore.currentlySpeakingSentenceId}
           visible={agentRoomStore.showAIMessages}
         />
 
-        {/* Central Orb */}
+        {/* Central Orb - Always centered */}
         <View style={styles.orbContainer}>
           <Orb size={120} />
         </View>

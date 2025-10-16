@@ -303,6 +303,7 @@ export class AgentRoomStore {
             runInAction(() => {
                 this.aiMessages.push({ sentence, sentence_id });
                 this.showAIMessages = true;
+                this.hasCalibrated = true; // Kluge to make UI State look better when ai starts speaking first
             });
         });
 

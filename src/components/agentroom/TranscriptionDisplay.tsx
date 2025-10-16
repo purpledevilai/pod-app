@@ -1,6 +1,13 @@
 import { Text } from '@/src/components/ui/Text';
-import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet } from 'react-native';
+import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+import Animated, {
+    Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming
+} from 'react-native-reanimated';
 
 interface TranscriptionDisplayProps {
     text: string | undefined;
@@ -8,31 +15,59 @@ interface TranscriptionDisplayProps {
 
 /**
  * TranscriptionDisplay - Shows the user's detected speech
- * Appears above the orb with fade-in animation
+ * Slides up from below with smooth fade-in animation
  */
 export const TranscriptionDisplay = ({ text }: TranscriptionDisplayProps) => {
-    const opacity = useRef(new Animated.Value(0)).current;
+    // Shared values for animations
+    const opacity = useSharedValue(0);
+    const translateY = useSharedValue(20);
+    const scale = useSharedValue(0.95);
 
     useEffect(() => {
         if (text) {
-            // Fade in
-            Animated.timing(opacity, {
-                toValue: 1,
-                duration: 300,
-                useNativeDriver: true,
-            }).start();
+            // Slide up and fade in
+            opacity.value = withTiming(1, {
+                duration: 400,
+                easing: Easing.out(Easing.cubic)
+            });
+            translateY.value = withSpring(0, {
+                damping: 15,
+                stiffness: 150
+            });
+            scale.value = withSpring(1, {
+                damping: 15,
+                stiffness: 150
+            });
         } else {
-            // Fade out
-            Animated.timing(opacity, {
-                toValue: 0,
-                duration: 500,
-                useNativeDriver: true,
-            }).start();
+            // Slide down and fade out
+            opacity.value = withTiming(0, {
+                duration: 300,
+                easing: Easing.in(Easing.cubic)
+            });
+            translateY.value = withTiming(20, {
+                duration: 300,
+                easing: Easing.in(Easing.cubic)
+            });
+            scale.value = withTiming(0.95, {
+                duration: 300,
+                easing: Easing.in(Easing.cubic)
+            });
         }
-    }, [text, opacity]);
+    }, [text]);
+
+    // Animated style combining opacity, translation, and scale
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            opacity: opacity.value,
+            transform: [
+                { translateY: translateY.value },
+                { scale: scale.value }
+            ],
+        };
+    });
 
     return (
-        <Animated.View style={[styles.container, { opacity }]}>
+        <Animated.View style={[styles.container, animatedStyle]}>
             <Text 
                 size={16} 
                 weight="regular"
