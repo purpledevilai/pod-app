@@ -35,9 +35,7 @@ const Gate = observer(function Gate() {
   // Handle navigation based on auth state
   useEffect(() => {
     if (allReady) {
-      if (authStore.isLoggedIn) {
-        router.replace('/(app)');
-      } else {
+      if (!authStore.isLoggedIn) {
         router.replace('/(auth)');
       }
     }

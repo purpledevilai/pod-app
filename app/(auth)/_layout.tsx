@@ -2,14 +2,14 @@
 import { useStores } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect, router, Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { observer } from 'mobx-react-lite';
 import { Image, Pressable } from 'react-native';
 
 export default observer(function AuthLayout() {
   const authStore = useStores().authStore;
   const { colors } = useTheme();
-  if (authStore.isLoggedIn) return <Redirect href="/(app)" />;
+  //if (authStore.isLoggedIn) return <Redirect href="/(app)" />;
 
   return (
     <Stack
