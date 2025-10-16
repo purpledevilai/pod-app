@@ -44,7 +44,10 @@ export default observer(function Home() {
       hasInitialized.current = true;
 
       console.log('[Home] Creating context...');
-      const context = await createDefaultAgentContext();
+      console.log('[Home] User profile:', JSON.stringify(authStore.user));
+      const context = await createDefaultAgentContext({
+        user_profile: JSON.stringify(authStore.user)
+      });
       console.log('[Home] Context created:', context.context_id);
       
       setCurrentContextId(context.context_id);
@@ -154,10 +157,7 @@ export default observer(function Home() {
 
         {/* Central Orb */}
         <View style={styles.orbContainer}>
-          <Orb
-            volume={agentRoomStore.isUserSpeaking || !!agentRoomStore.currentlySpeakingSentenceId ? 1 : 0}
-            size={120}
-          />
+          <Orb size={120} />
         </View>
 
         {/* User Transcription (Below Orb) */}

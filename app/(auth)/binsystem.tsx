@@ -32,7 +32,7 @@ const BIN_IMAGES = {
 export default observer(function BinSystemScreen() {
     const { space, colors } = useTheme();
     const { copy } = useContent();
-    const acStore = useStores().accountCreationStore;
+    const { accountCreationStore: acStore, authStore } = useStores();
     const headerHeight = useHeaderHeight();
 
     function onSelectBinSystem(binSystem: BinSystem) {
@@ -43,7 +43,9 @@ export default observer(function BinSystemScreen() {
         if (!acStore.selectedBinSystem || acStore.binSystemLookUpLoading || acStore.createAccountLoading) return;
         console.log("Creating account with bin system", acStore.selectedBinSystem.id);
         try {
-            await acStore.createAccount();
+            const response = await acStore.createAccount();
+            await authStore.loginWithTokens(response.access_token, response.refresh_token);
+            await authStore.fetchUser();
             router.push('/(app)/landing');
         } catch (error) {
             console.log("Error creating account:", error);

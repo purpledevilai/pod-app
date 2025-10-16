@@ -42,13 +42,13 @@ export async function createContext({
  * Create a context using the default agent from environment config
  * Convenience method for this app's single-agent setup
  */
-export async function createDefaultAgentContext(): Promise<Context> {
+export async function createDefaultAgentContext(prompt_args: Record<string, string>): Promise<Context> {
     const agentId = process.env.EXPO_PUBLIC_AGENT_ID || 'default-agent-id';
     console.log('[createDefaultAgentContext] Ajentify API URL:', process.env.EXPO_PUBLIC_AGENTIFY_API);
     console.log('[createDefaultAgentContext] Creating context with agent ID:', agentId);
     return createContext({
         agent_id: agentId,
-        invoke_agent_message: false
+        prompt_args
     });
 }
 

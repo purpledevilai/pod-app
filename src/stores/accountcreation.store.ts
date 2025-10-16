@@ -1,4 +1,3 @@
-import { setAuthTokens } from '@/src/services/api/_config/tokens';
 import { createAccount, CreateAccountResponse } from '@/src/services/api/auth/createaccount';
 import { binSystemsForCouncil, BinSystemsForCouncilResponse } from '@/src/services/api/binsystems/binsystemforcouncil';
 import { councilsForPostCode, CouncilsForPostcodeResponse } from '@/src/services/api/councils/councilsforpostcode';
@@ -109,7 +108,7 @@ export class AccountCreationStore {
         this.createAccountToken = token;
     }
 
-    createAccount = async () => {
+    createAccount = async (): Promise<CreateAccountResponse> => {
         try {
             if (!this.createAccountToken || !this.selectedCouncilId || !this.selectedBinSystem) {
                 throw new Error("Missing required data for account creation");
@@ -126,14 +125,11 @@ export class AccountCreationStore {
                 bin_system_id: this.selectedBinSystem.id
             });
 
-            // Save tokens to secure storage
-            await setAuthTokens(response.access_token, response.refresh_token);
-
             runInAction(() => { 
                 this.createdUser = response.user;
             });
 
-            return response.user;
+            return response;
         } catch (e) {
             console.error("Error creating account:", e);
             runInAction(() => { 

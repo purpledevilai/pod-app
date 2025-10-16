@@ -3,6 +3,8 @@ import { clearAuthTokens, getAccessToken, getRefreshToken, isExpired, loadAuthTo
 import { refreshToken } from '../services/api/auth/refreshtoken';
 import { sendEmailVerification } from '../services/api/auth/sendemailverification';
 import { verifyEmail } from '../services/api/auth/verifyemail';
+import { UserResolved } from '../services/api/types/user';
+import { getCurrentUser } from '../services/api/user/getuser';
 
 export class AuthStore {
     bootstrapped = false;
@@ -10,10 +12,25 @@ export class AuthStore {
     challengeId: string | null = null;
     createAccountToken: string | null = null;
     isLoggedIn: boolean = false;
+    user: UserResolved | null = null;
     private refreshingPromise: Promise<void> | null = null;
 
     constructor() {
         makeAutoObservable(this, {}, { autoBind: true });
+    }
+
+    async fetchUser() {
+        try {
+            console.log('[AuthStore] Fetching user data...');
+            const user = await getCurrentUser();
+            runInAction(() => {
+                this.user = user;
+            });
+            console.log('[AuthStore] User fetched successfully:', user);
+        } catch (error) {
+            console.error('[AuthStore] Error fetching user:', error);
+            // Don't throw - user fetch failure shouldn't break the auth flow
+        }
     }
 
     async bootstrap() {
@@ -36,6 +53,8 @@ export class AuthStore {
         if (!isExpired(accessToken)) {
             console.log("AuthStore: Access token is valid, user is logged in");
             runInAction(() => { this.isLoggedIn = true; });
+            // Fetch user data for existing logged-in user
+            await this.fetchUser();
             runInAction(() => { this.bootstrapped = true; });
             return;
         }
@@ -55,6 +74,8 @@ export class AuthStore {
             await this.refreshAccessToken();
             console.log("AuthStore: Successfully refreshed access token");
             runInAction(() => { this.isLoggedIn = true; });
+            // Fetch user data after successful token refresh
+            await this.fetchUser();
         } catch (error) {
             console.log("AuthStore: Failed to refresh access token:", error);
             await clearAuthTokens();
@@ -91,6 +112,8 @@ export class AuthStore {
                     this.challengeId = null;
                     this.createAccountToken = null;
                 });
+                // Fetch user data for existing user
+                await this.fetchUser();
                 return { status: 'logged_in' as const };
             }
 
@@ -116,10 +139,21 @@ export class AuthStore {
         await setAuthTokens(response.access_token, response.refresh_token);
     }
 
+    async loginWithTokens(accessToken: string, refreshToken: string) {
+        console.log('[AuthStore] Logging in with tokens...');
+        await setAuthTokens(accessToken, refreshToken);
+        runInAction(() => {
+            this.isLoggedIn = true;
+        });
+    }
+
     async logout() {
         console.log("AuthStore: Logging out...");
         await clearAuthTokens();
-        runInAction(() => { this.isLoggedIn = false; });
+        runInAction(() => { 
+            this.isLoggedIn = false;
+            this.user = null;
+        });
     }
 
     async getAccessToken(): Promise<string | null> {
