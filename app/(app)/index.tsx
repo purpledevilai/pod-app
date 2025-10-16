@@ -93,8 +93,8 @@ export default observer(function Home() {
     ? Object.values(agentRoomStore.roomConnection.peerConnections)[0]?.inboundMediaStream
     : undefined;
 
-  // If not in a conversation, show start button
-  if (!currentContextId) {
+  // If not in a conversation or callibration, show start button
+  if (!currentContextId || !agentRoomStore.hasCalibrated) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.centerContent}>
@@ -107,9 +107,9 @@ export default observer(function Home() {
           )}
 
           <Button
-            title={isCreatingContext ? "Starting..." : "Start Conversation"}
+            title={isCreatingContext ? "Starting..." : (currentContextId && !agentRoomStore.hasCalibrated) ? "Calibrating..." : "Start Conversation"}
             onPress={handleStartConversation}
-            style={{ opacity: isCreatingContext ? 0.5 : 1 }}
+            style={{ opacity: isCreatingContext || (currentContextId && !agentRoomStore.hasCalibrated) ? 0.5 : 1 }}
           />
         </View>
       </SafeAreaView>
@@ -136,15 +136,6 @@ export default observer(function Home() {
           audioMuted={agentRoomStore.audioMuted}
         />
       </ScrollView> */}
-
-      {/* Calibration Overlay */}
-      {agentRoomStore.isCalibrating && (
-        <View style={styles.calibrationOverlay}>
-          <Text weight="semibold" size={18} style={styles.calibrationText}>
-            Don't Speak...{'\n'}Measuring ambient noise
-          </Text>
-        </View>
-      )}
 
       {/* Main Conversation UI */}
       <View style={styles.conversationContainer}>

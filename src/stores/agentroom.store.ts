@@ -20,6 +20,7 @@ export class AgentRoomStore {
     isConnecting = true;
     isConnected = false;
     isCalibrating = false;
+    hasCalibrated = false;
     
     // Speech states
     isUserSpeaking = false;
@@ -66,6 +67,7 @@ export class AgentRoomStore {
         this.isConnecting = true;
         this.isConnected = false;
         this.isCalibrating = false;
+        this.hasCalibrated = false;
         this.isUserSpeaking = false;
         this.currentDetectedSpeech = undefined;
         this.aiMessages = [];
@@ -278,6 +280,7 @@ export class AgentRoomStore {
             console.log(`[AgentRoomStore] Calibration status: ${status}`);
             runInAction(() => {
                 this.isCalibrating = status === "started";
+                this.hasCalibrated = status === "complete";
             });
         });
 

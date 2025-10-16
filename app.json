@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "This app needs access to your microphone to enable voice conversations with the AI agent.",
-        "NSCameraUsageDescription": "This app needs access to your camera for video calls."
+        "NSCameraUsageDescription": "This app needs access to your camera for video calls.",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.keanu-interone-ajentify.pod-app"
     },
