@@ -1,5 +1,6 @@
 import { AIMessageDisplay } from '@/src/components/agentroom/AIMessageDisplay';
 import { AudioPlayer } from '@/src/components/agentroom/AudioPlayer';
+import { SlideUpView } from '@/src/components/agentroom/SlideUpView';
 import { TranscriptionDisplay } from '@/src/components/agentroom/TranscriptionDisplay';
 import { Orb } from '@/src/components/Orb';
 import { Button } from '@/src/components/ui/Button';
@@ -46,10 +47,10 @@ export default observer(function Home() {
       console.log('[Home] Creating context...');
       console.log('[Home] User profile:', JSON.stringify(authStore.user));
       const context = await createDefaultAgentContext({
-        user_profile: JSON.stringify(authStore.user)
+        user_data: JSON.stringify(authStore.user)
       });
       console.log('[Home] Context created:', context.context_id);
-      
+
       setCurrentContextId(context.context_id);
 
       console.log('[Home] Initializing agent room...');
@@ -59,8 +60,8 @@ export default observer(function Home() {
     } catch (error) {
       console.error('[Home] Error starting conversation:', error);
       setContextError(
-        error instanceof Error 
-          ? error.message 
+        error instanceof Error
+          ? error.message
           : 'Failed to start conversation'
       );
       hasInitialized.current = false;
@@ -86,6 +87,13 @@ export default observer(function Home() {
    */
   const handleToggleMicrophone = () => {
     agentRoomStore.toggleMicrophone();
+  };
+
+  /**
+   * Dismiss the slide-up view
+   */
+  const handleDismissSlideUpView = () => {
+    agentRoomStore.slideUpViewShouldShow = false;
   };
 
   // Get inbound audio stream from first peer connection
@@ -167,7 +175,17 @@ export default observer(function Home() {
           title="End Conversation"
           onPress={handleEndConversation}
         />
+        <Button
+          title="Test Slide-up View"
+          onPress={() => agentRoomStore.slideUpViewShouldShow = true}
+        />
       </View>
+
+      {/* Slide-up View for Agent Events */}
+      <SlideUpView
+        visible={agentRoomStore.slideUpViewShouldShow}
+        onDismiss={handleDismissSlideUpView}
+      />
     </SafeAreaView>
   );
 });
@@ -175,13 +193,13 @@ export default observer(function Home() {
 /**
  * DebugStatus - Shows connection status and other debug info
  */
-const DebugStatus = observer(({ 
-  contextId, 
-  isConnecting, 
-  isConnected, 
+const DebugStatus = observer(({
+  contextId,
+  isConnecting,
+  isConnected,
   isCalibrating,
   initializationError,
-  audioMuted 
+  audioMuted
 }: {
   contextId: string;
   isConnecting: boolean;
@@ -212,7 +230,7 @@ const DebugStatus = observer(({
       <Text weight="semibold" size={12} style={{ color: colors.muted }}>
         Debug Info
       </Text>
-      
+
       <View style={styles.debugRow}>
         <Text weight="regular" size={11} style={{ color: colors.muted }}>
           Context ID:

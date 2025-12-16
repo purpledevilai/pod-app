@@ -31,6 +31,9 @@ export class AgentRoomStore {
     currentlySpeakingSentenceId: string | undefined = undefined;
     showAIMessages = true;
     
+    // Slide-up view for agent events
+    slideUpViewShouldShow = false;
+    
     // RPC layer for agent communication
     agentRPCLayer: JSONRPCPeer | undefined = undefined;
     
@@ -74,6 +77,7 @@ export class AgentRoomStore {
         this.currentlySpeakingSentenceId = undefined;
         this.agentRPCLayer = undefined;
         this.showAIMessages = true;
+        this.slideUpViewShouldShow = false;
         this.initializationError = undefined;
         
         console.log('[AgentRoomStore] Reset complete');
@@ -329,6 +333,37 @@ export class AgentRoomStore {
                 });
             }, 2000);
         });
+
+        this.agentRPCLayer.on("tool_call", ({tool_name, tool_input}) => {
+            console.log(`[AgentRoomStore] Tool called: ${tool_name}`, tool_input);
+            this.agentToolCallHandler(tool_name, tool_input);
+        });
+
+        this.agentRPCLayer.on("tool_response", ({tool_name, tool_output}) => {
+            console.log(`[AgentRoomStore] Tool response: ${tool_name}`, tool_output);
+            // Tool responses are logged but not used for UI triggers
+        });
+    }
+
+    /**
+     * Handle tool calls from the agent
+     * Routes UI triggers based on the tool name
+     */
+    private agentToolCallHandler(tool_name: string, tool_input: any) {
+        console.log(`[AgentRoomStore] Processing tool call: ${tool_name}`);
+        
+        switch(tool_name) {
+            case "show_arl_and_ric":
+                // Show the Australian Recycling Label and RIC (Resin Identification Code)
+                runInAction(() => {
+                    this.slideUpViewShouldShow = true;
+                });
+                break;
+            
+            // Add more tool names here as needed
+            default:
+                console.log(`[AgentRoomStore] Unknown tool name: ${tool_name}`);
+        }
     }
 
     /**

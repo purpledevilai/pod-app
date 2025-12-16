@@ -15,7 +15,7 @@ export const getCurrentUser = async (): Promise<UserResolved> => {
       throw new Error('No user data received from server');
     }
     
-    console.log('[getCurrentUser] User fetched successfully:', response.data);
+    console.log('[getCurrentUser] User fetched successfully:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error('[getCurrentUser] Error fetching user:', error);
