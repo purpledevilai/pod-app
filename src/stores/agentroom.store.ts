@@ -33,6 +33,7 @@ export class AgentRoomStore {
     
     // Slide-up view for agent events
     slideUpViewShouldShow = false;
+    slideUpViewContentType: string | undefined = undefined;
     
     // RPC layer for agent communication
     agentRPCLayer: JSONRPCPeer | undefined = undefined;
@@ -78,6 +79,7 @@ export class AgentRoomStore {
         this.agentRPCLayer = undefined;
         this.showAIMessages = true;
         this.slideUpViewShouldShow = false;
+        this.slideUpViewContentType = undefined;
         this.initializationError = undefined;
         
         console.log('[AgentRoomStore] Reset complete');
@@ -356,6 +358,7 @@ export class AgentRoomStore {
             case "show_arl_and_ric":
                 // Show the Australian Recycling Label and RIC (Resin Identification Code)
                 runInAction(() => {
+                    this.slideUpViewContentType = "arl_and_ric";
                     this.slideUpViewShouldShow = true;
                 });
                 break;

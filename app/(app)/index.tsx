@@ -1,4 +1,5 @@
 import { AIMessageDisplay } from '@/src/components/agentroom/AIMessageDisplay';
+import { ARLAndRICView } from '@/src/components/agentroom/ARLAndRICView';
 import { AudioPlayer } from '@/src/components/agentroom/AudioPlayer';
 import { SlideUpView } from '@/src/components/agentroom/SlideUpView';
 import { TranscriptionDisplay } from '@/src/components/agentroom/TranscriptionDisplay';
@@ -96,6 +97,18 @@ export default observer(function Home() {
     agentRoomStore.slideUpViewShouldShow = false;
   };
 
+  /**
+   * Render the appropriate content for the slide-up view
+   */
+  const renderSlideUpContent = () => {
+    switch (agentRoomStore.slideUpViewContentType) {
+      case 'arl_and_ric':
+        return <ARLAndRICView />;
+      default:
+        return null;
+    }
+  };
+
   // Get inbound audio stream from first peer connection
   const inboundAudioStream = currentContextId && agentRoomStore.roomConnection
     ? Object.values(agentRoomStore.roomConnection.peerConnections)[0]?.inboundMediaStream
@@ -175,17 +188,22 @@ export default observer(function Home() {
           title="End Conversation"
           onPress={handleEndConversation}
         />
-        <Button
+        {/* <Button
           title="Test Slide-up View"
-          onPress={() => agentRoomStore.slideUpViewShouldShow = true}
-        />
+          onPress={() => {
+            agentRoomStore.slideUpViewContentType = 'arl_and_ric';
+            agentRoomStore.slideUpViewShouldShow = true;
+          }}
+        /> */}
       </View>
 
       {/* Slide-up View for Agent Events */}
       <SlideUpView
         visible={agentRoomStore.slideUpViewShouldShow}
         onDismiss={handleDismissSlideUpView}
-      />
+      >
+        {renderSlideUpContent()}
+      </SlideUpView>
     </SafeAreaView>
   );
 });

@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-const VIEW_HEIGHT_PERCENTAGE = 0.6;
+const VIEW_HEIGHT_PERCENTAGE = 0.75;
 const VIEW_HEIGHT = SCREEN_HEIGHT * VIEW_HEIGHT_PERCENTAGE;
 const DISMISS_THRESHOLD = VIEW_HEIGHT * 0.3; // 30% drag threshold
 const ANIMATION_DURATION = 300;
