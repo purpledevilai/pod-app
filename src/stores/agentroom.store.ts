@@ -35,6 +35,11 @@ export class AgentRoomStore {
     slideUpViewShouldShow = false;
     slideUpViewContentType: string | undefined = undefined;
     
+    // Bin classification view
+    binClassificationShouldShow = false;
+    binClassificationImage: string | undefined = undefined;
+    private binClassificationHideTimer: number | undefined = undefined;
+    
     // RPC layer for agent communication
     agentRPCLayer: JSONRPCPeer | undefined = undefined;
     
@@ -80,6 +85,12 @@ export class AgentRoomStore {
         this.showAIMessages = true;
         this.slideUpViewShouldShow = false;
         this.slideUpViewContentType = undefined;
+        this.binClassificationShouldShow = false;
+        this.binClassificationImage = undefined;
+        if (this.binClassificationHideTimer) {
+            clearTimeout(this.binClassificationHideTimer);
+            this.binClassificationHideTimer = undefined;
+        }
         this.initializationError = undefined;
         
         console.log('[AgentRoomStore] Reset complete');
@@ -363,10 +374,66 @@ export class AgentRoomStore {
                 });
                 break;
             
+            case "show_bin_classification":
+                // Show the bin classification with appropriate bin image
+                const appearance = tool_input?.appearance?.toLowerCase() || "";
+                
+                // Map appearance to bin image
+                const binImageMap: Record<string, string> = {
+                    "yellow": "bin-yellow.png",
+                    "red": "bin-red.png",
+                    "blue": "bin-blue.png",
+                    "green": "bin-darkgreen.png",
+                    "lime green": "bin-lightgreen.png",
+                    "purple": "bin-purple.png",
+                    "maroon": "bin-maroon.png",
+                };
+                
+                const binImage = binImageMap[appearance] || "no-bins-ic.png";
+                
+                runInAction(() => {
+                    // Dismiss slide-up view if showing
+                    this.slideUpViewShouldShow = false;
+                    
+                    // Clear any existing timer
+                    if (this.binClassificationHideTimer) {
+                        clearTimeout(this.binClassificationHideTimer);
+                    }
+                    
+                    // Show bin classification
+                    this.binClassificationImage = binImage;
+                    this.binClassificationShouldShow = true;
+                    
+                    // Auto-hide after 10 seconds
+                    this.binClassificationHideTimer = setTimeout(() => {
+                        runInAction(() => {
+                            this.binClassificationShouldShow = false;
+                            this.binClassificationHideTimer = undefined;
+                        });
+                    }, 10000);
+                });
+                break;
+            
             // Add more tool names here as needed
             default:
                 console.log(`[AgentRoomStore] Unknown tool name: ${tool_name}`);
         }
+    }
+
+    /**
+     * Dismiss the bin classification view
+     */
+    dismissBinClassification = () => {
+        console.log('[AgentRoomStore] Dismissing bin classification');
+        
+        // Clear the auto-hide timer if it exists
+        if (this.binClassificationHideTimer) {
+            clearTimeout(this.binClassificationHideTimer);
+            this.binClassificationHideTimer = undefined;
+        }
+        
+        // Hide the view
+        this.binClassificationShouldShow = false;
     }
 
     /**

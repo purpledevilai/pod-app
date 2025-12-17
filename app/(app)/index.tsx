@@ -1,6 +1,7 @@
 import { AIMessageDisplay } from '@/src/components/agentroom/AIMessageDisplay';
 import { ARLAndRICView } from '@/src/components/agentroom/ARLAndRICView';
 import { AudioPlayer } from '@/src/components/agentroom/AudioPlayer';
+import { BinClassificationView } from '@/src/components/agentroom/BinClassificationView';
 import { SlideUpView } from '@/src/components/agentroom/SlideUpView';
 import { TranscriptionDisplay } from '@/src/components/agentroom/TranscriptionDisplay';
 import { Orb } from '@/src/components/Orb';
@@ -11,7 +12,7 @@ import { useTheme } from '@/src/providers/ThemeProvider';
 import { createDefaultAgentContext } from '@/src/services/api/context/createcontext';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
 /**
  * Home Screen - Main voice conversation interface
@@ -98,6 +99,13 @@ export default observer(function Home() {
   };
 
   /**
+   * Dismiss the bin classification view
+   */
+  const handleDismissBinClassification = () => {
+    agentRoomStore.dismissBinClassification();
+  };
+
+  /**
    * Render the appropriate content for the slide-up view
    */
   const renderSlideUpContent = () => {
@@ -159,22 +167,35 @@ export default observer(function Home() {
       </ScrollView> */}
 
       {/* Main Conversation UI */}
-      <View style={styles.conversationContainer}>
-        {/* AI Messages (Top - Absolutely Positioned) */}
+      <Pressable 
+        style={styles.conversationContainer}
+        onPress={agentRoomStore.binClassificationShouldShow ? handleDismissBinClassification : undefined}
+        disabled={!agentRoomStore.binClassificationShouldShow}
+      >
+        {/* AI Messages (Top - Absolutely Positioned) - Always visible */}
         <AIMessageDisplay
           messages={agentRoomStore.aiMessages}
           currentlySpeakingSentenceId={agentRoomStore.currentlySpeakingSentenceId}
           visible={agentRoomStore.showAIMessages}
         />
 
-        {/* Central Orb - Always centered */}
+        {/* Central Content - Orb or Bin Classification */}
         <View style={styles.orbContainer}>
-          <Orb size={120} />
+          {agentRoomStore.binClassificationShouldShow && agentRoomStore.binClassificationImage ? (
+            <BinClassificationView
+              binImage={agentRoomStore.binClassificationImage}
+              visible={agentRoomStore.binClassificationShouldShow}
+            />
+          ) : (
+            <Orb size={120} />
+          )}
         </View>
 
         {/* User Transcription (Below Orb) */}
-        <TranscriptionDisplay text={agentRoomStore.currentDetectedSpeech} />
-      </View>
+        {!agentRoomStore.binClassificationShouldShow && (
+          <TranscriptionDisplay text={agentRoomStore.currentDetectedSpeech} />
+        )}
+      </Pressable>
 
       {/* Controls */}
       <View style={styles.controls}>
