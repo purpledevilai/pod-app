@@ -360,11 +360,14 @@ export class AgentRoomStore {
                 this.isUserSpeaking = is_speaking;
                 
                 if (is_speaking) {
-                    // User started speaking - create a new message entry
-                    this.userMessageCounter++;
-                    const newMessageId = `user-msg-${this.userMessageCounter}`;
-                    this.currentUserMessageId = newMessageId;
-                    this.userMessages.push({ text: '', message_id: newMessageId });
+                    // User started speaking - create a new message entry if we don't have one already
+                    // (speech_detected might have already created one)
+                    if (!this.currentUserMessageId) {
+                        this.userMessageCounter++;
+                        const newMessageId = `user-msg-${this.userMessageCounter}`;
+                        this.currentUserMessageId = newMessageId;
+                        this.userMessages.push({ text: '', message_id: newMessageId });
+                    }
                 } else {
                     // User stopped speaking - finalize the message
                     // Clear active indicators but keep the message in history
@@ -379,8 +382,15 @@ export class AgentRoomStore {
             runInAction(() => {
                 this.currentDetectedSpeech = text;
                 
-                // Update the current user message in the history
-                if (this.currentUserMessageId) {
+                // If we don't have a current message yet (speech_detected came before is_speaking_status),
+                // create one now
+                if (!this.currentUserMessageId) {
+                    this.userMessageCounter++;
+                    const newMessageId = `user-msg-${this.userMessageCounter}`;
+                    this.currentUserMessageId = newMessageId;
+                    this.userMessages.push({ text: text, message_id: newMessageId });
+                } else {
+                    // Update the current user message in the history
                     const currentMsg = this.userMessages.find(
                         m => m.message_id === this.currentUserMessageId
                     );
