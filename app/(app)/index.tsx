@@ -25,6 +25,23 @@ export default observer(function Home() {
   const [contextError, setContextError] = useState<string | undefined>();
   const [currentContextId, setCurrentContextId] = useState<string | undefined>();
   const hasInitialized = useRef(false);
+  
+  // Audio level states for animation
+  const [userAudioLevel, setUserAudioLevel] = useState(0);
+  const [agentAudioLevel, setAgentAudioLevel] = useState(0);
+
+  // Set up audio level callbacks
+  useEffect(() => {
+    agentRoomStore.setOnUserAudioLevel((level) => {
+      setUserAudioLevel(level);
+      console.log(`[Home] User audio level: ${level.toFixed(4)}`);
+    });
+    
+    agentRoomStore.setOnAgentAudioLevel((level) => {
+      setAgentAudioLevel(level);
+      console.log(`[Home] Agent audio level: ${level.toFixed(4)}`);
+    });
+  }, [agentRoomStore]);
 
   // Reset on unmount
   useEffect(() => {

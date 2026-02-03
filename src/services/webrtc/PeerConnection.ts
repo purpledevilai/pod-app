@@ -18,6 +18,7 @@ export class PeerConnection {
     dataChannel: RTCDataChannel | undefined = undefined;
     onMessageCallback: ((message: string) => void) | undefined = undefined;
     onVolumeChangeCallback: ((volume: number) => void) | undefined = undefined;
+    onInboundStreamReceived: ((stream: MediaStream) => void) | undefined = undefined;
 
     constructor(
         id: string,
@@ -38,6 +39,10 @@ export class PeerConnection {
 
     setOnVolumeChange(callback: (volume: number) => void) {
         this.onVolumeChangeCallback = callback;
+    }
+
+    setOnInboundStreamReceived(callback: (stream: MediaStream) => void) {
+        this.onInboundStreamReceived = callback;
     }
 
     initialize() {
@@ -105,10 +110,12 @@ export class PeerConnection {
             const [newStream] = event.streams;
             this.inboundMediaStream = newStream;
             
-            // TODO: Add audio monitoring for volume levels
-            // This will be implemented in a later phase
-            // For now, we'll just log when we receive a stream
             console.log(`[${this.id}] Inbound media stream received`);
+            
+            // Notify listeners that inbound stream is available
+            if (this.onInboundStreamReceived) {
+                this.onInboundStreamReceived(newStream);
+            }
         };
 
         // Add local media tracks (audio only for this app)

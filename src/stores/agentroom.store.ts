@@ -1,3 +1,4 @@
+import { AudioLevelMonitor } from "@/src/services/audio/AudioLevelMonitor";
 import { JSONRPCPeer } from "@/src/services/webrtc/JSONRPCPeer";
 import { PeerConnection } from "@/src/services/webrtc/PeerConnection";
 import { RoomConnection } from "@/src/services/webrtc/RoomConnection";
@@ -48,9 +49,13 @@ export class AgentRoomStore {
     // RPC layer for agent communication
     agentRPCLayer: JSONRPCPeer | undefined = undefined;
     
-    // Volume monitoring callbacks (for future orb animation)
-    onLocalVolumeChange: ((volume: number) => void) | undefined = undefined;
-    onInboundVolumeChange: ((peerId: string, volume: number) => void) | undefined = undefined;
+    // Audio level monitoring
+    private userAudioMonitor: AudioLevelMonitor | undefined = undefined;
+    private agentAudioMonitor: AudioLevelMonitor | undefined = undefined;
+    
+    // Audio level callbacks (for orb animation)
+    onUserAudioLevel: ((level: number) => void) | undefined = undefined;
+    onAgentAudioLevel: ((level: number) => void) | undefined = undefined;
 
     // Error handling
     initializationError: string | undefined = undefined;
@@ -67,6 +72,16 @@ export class AgentRoomStore {
         
         if (this.roomConnection) {
             this.roomConnection.leaveRoom();
+        }
+        
+        // Stop audio monitors
+        if (this.userAudioMonitor) {
+            this.userAudioMonitor.stop();
+            this.userAudioMonitor = undefined;
+        }
+        if (this.agentAudioMonitor) {
+            this.agentAudioMonitor.stop();
+            this.agentAudioMonitor = undefined;
         }
         
         // Stop media tracks
@@ -104,12 +119,18 @@ export class AgentRoomStore {
         console.log('[AgentRoomStore] Reset complete');
     }
 
-    setOnLocalVolumeChange(callback: (volume: number) => void) {
-        this.onLocalVolumeChange = callback;
+    /**
+     * Set callback for user audio level changes (for animation)
+     */
+    setOnUserAudioLevel(callback: (level: number) => void) {
+        this.onUserAudioLevel = callback;
     }
 
-    setOnInboundVolumeChange(callback: (peerId: string, volume: number) => void) {
-        this.onInboundVolumeChange = callback;
+    /**
+     * Set callback for agent audio level changes (for animation)
+     */
+    setOnAgentAudioLevel(callback: (level: number) => void) {
+        this.onAgentAudioLevel = callback;
     }
 
     /**
@@ -263,19 +284,26 @@ export class AgentRoomStore {
         const mediaStream = await mediaDeviceStore.getMediaStream(
             typeof audioConstraints === 'object' ? audioConstraints.deviceId : undefined
         );
-
-        // TODO: Monitor local audio for volume (future phase)
-        // monitorMicStream(mediaStream, (volume) => {
-        //     this.onLocalVolumeChange?.(volume);
-        // });
         
         // Create peer connection
         const peer = new PeerConnection(peerId, selfDescription, mediaStream, createDataChannel);
         
-        // TODO: Monitor remote audio for volume (future phase)
-        // peer.setOnVolumeChange((volume) => {
-        //     this.onInboundVolumeChange?.(peerId, volume);
-        // });
+        // Set up callback for when inbound stream is received (for agent audio monitoring)
+        peer.setOnInboundStreamReceived(() => {
+            // Start agent audio monitor when we receive the inbound stream
+            if (peer.pc && !this.agentAudioMonitor) {
+                console.log('[AgentRoomStore] Starting agent audio level monitor');
+                this.agentAudioMonitor = new AudioLevelMonitor({
+                    peerConnection: peer.pc,
+                    trackType: 'inbound',
+                    onLevelChange: (level) => {
+                        this.onAgentAudioLevel?.(level);
+                    },
+                    pollIntervalMs: 100,
+                });
+                this.agentAudioMonitor.start();
+            }
+        });
         
         // Set up JSON-RPC layer for agent communication
         this.agentRPCLayer = new JSONRPCPeer(peer.sendMessage);
@@ -283,6 +311,23 @@ export class AgentRoomStore {
         
         // Set the data channel message handler
         peer.setOnDataChannelMessage(this.agentRPCLayer.handleMessage);
+        
+        // Start user audio monitor after peer is initialized (will have access to pc)
+        // We need to defer this until after the peer connection is configured
+        setTimeout(() => {
+            if (peer.pc && !this.userAudioMonitor) {
+                console.log('[AgentRoomStore] Starting user audio level monitor');
+                this.userAudioMonitor = new AudioLevelMonitor({
+                    peerConnection: peer.pc,
+                    trackType: 'outbound',
+                    onLevelChange: (level) => {
+                        this.onUserAudioLevel?.(level);
+                    },
+                    pollIntervalMs: 100,
+                });
+                this.userAudioMonitor.start();
+            }
+        }, 100);
         
         console.log(`[AgentRoomStore] Peer connection setup complete for ${peerId}`);
         return peer;
@@ -516,6 +561,14 @@ export class AgentRoomStore {
      */
     leaveRoom() {
         console.log('[AgentRoomStore] Leaving room...');
+        
+        // Stop audio monitors
+        if (this.userAudioMonitor) {
+            this.userAudioMonitor.stop();
+        }
+        if (this.agentAudioMonitor) {
+            this.agentAudioMonitor.stop();
+        }
         
         if (this.mediaStream) {
             this.mediaStream.getTracks().forEach((track) => track.stop());
