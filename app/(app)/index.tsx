@@ -193,7 +193,10 @@ export default observer(function Home() {
 
         {/* User Transcription (Below Orb) */}
         {!agentRoomStore.binClassificationShouldShow && (
-          <TranscriptionDisplay text={agentRoomStore.currentDetectedSpeech} />
+          <TranscriptionDisplay 
+            messages={agentRoomStore.userMessages}
+            currentMessageId={agentRoomStore.currentUserMessageId}
+          />
         )}
       </Pressable>
 

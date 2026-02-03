@@ -26,6 +26,11 @@ export class AgentRoomStore {
     isUserSpeaking = false;
     currentDetectedSpeech: string | undefined = undefined;
     
+    // User messages (persistent history)
+    userMessages: { text: string; message_id: string }[] = [];
+    currentUserMessageId: string | undefined = undefined;
+    private userMessageCounter = 0;
+    
     // AI messages
     aiMessages: { sentence: string; sentence_id: string }[] = [];
     currentlySpeakingSentenceId: string | undefined = undefined;
@@ -79,6 +84,9 @@ export class AgentRoomStore {
         this.hasCalibrated = false;
         this.isUserSpeaking = false;
         this.currentDetectedSpeech = undefined;
+        this.userMessages = [];
+        this.currentUserMessageId = undefined;
+        this.userMessageCounter = 0;
         this.aiMessages = [];
         this.currentlySpeakingSentenceId = undefined;
         this.agentRPCLayer = undefined;
@@ -305,6 +313,19 @@ export class AgentRoomStore {
             console.log(`[AgentRoomStore] User speaking: ${is_speaking}`);
             runInAction(() => {
                 this.isUserSpeaking = is_speaking;
+                
+                if (is_speaking) {
+                    // User started speaking - create a new message entry
+                    this.userMessageCounter++;
+                    const newMessageId = `user-msg-${this.userMessageCounter}`;
+                    this.currentUserMessageId = newMessageId;
+                    this.userMessages.push({ text: '', message_id: newMessageId });
+                } else {
+                    // User stopped speaking - finalize the message
+                    // Clear active indicators but keep the message in history
+                    this.currentDetectedSpeech = undefined;
+                    this.currentUserMessageId = undefined;
+                }
             });
         });
 
@@ -312,6 +333,16 @@ export class AgentRoomStore {
             console.log(`[AgentRoomStore] Speech detected: ${text}`);
             runInAction(() => {
                 this.currentDetectedSpeech = text;
+                
+                // Update the current user message in the history
+                if (this.currentUserMessageId) {
+                    const currentMsg = this.userMessages.find(
+                        m => m.message_id === this.currentUserMessageId
+                    );
+                    if (currentMsg) {
+                        currentMsg.text = text;
+                    }
+                }
             });
         });
 
@@ -334,17 +365,10 @@ export class AgentRoomStore {
         this.agentRPCLayer.on("stoped_speaking", () => {
             console.log(`[AgentRoomStore] AI stopped speaking`);
             runInAction(() => {
+                // Only clear the active speaking indicator, keep all messages persistent
                 this.currentlySpeakingSentenceId = undefined;
-                this.currentDetectedSpeech = undefined;
-                this.showAIMessages = false;
+                // Keep showAIMessages true since we want to persistently show messages
             });
-            
-            // Clear AI messages after a delay
-            setTimeout(() => {
-                runInAction(() => {
-                    this.aiMessages = [];
-                });
-            }, 2000);
         });
 
         this.agentRPCLayer.on("tool_call", ({tool_name, tool_input}) => {

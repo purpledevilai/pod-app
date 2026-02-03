@@ -102,7 +102,7 @@ export class JSONRPCPeer {
             // Get handler
             const handler = this.handlerRegistry[parsedMessage.method];
             if (!handler) {
-                console.error("Error: no handler for message", parsedMessage);
+                //console.error("Error: no handler for message", parsedMessage);
                 return;
             }
             console.log("Handling request", parsedMessage.method);
