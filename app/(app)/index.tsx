@@ -10,6 +10,7 @@ import { Text } from '@/src/components/ui/Text';
 import { useStores } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
 import { createDefaultAgentContext } from '@/src/services/api/context/createcontext';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
@@ -227,23 +228,26 @@ export default observer(function Home() {
 
       {/* Controls */}
       <View style={styles.controls}>
-        {/* <Button
-          title={agentRoomStore.audioMuted ? "Unmute Mic" : "Mute Mic"}
-          onPress={handleToggleMicrophone}
-          style={{ opacity: agentRoomStore.isConnecting ? 0.5 : 1 }}
-        />
-        <View style={{ height: 12 }} /> */}
-        <Button
-          title="End Conversation"
-          onPress={handleEndConversation}
-        />
-        {/* <Button
-          title="Test Slide-up View"
-          onPress={() => {
-            agentRoomStore.slideUpViewContentType = 'arl_and_ric';
-            agentRoomStore.slideUpViewShouldShow = true;
-          }}
-        /> */}
+        <View style={styles.controlsRow}>
+          <Button
+            title="End Conversation"
+            onPress={handleEndConversation}
+            style={{ flex: 1 }}
+          />
+          <Pressable
+            onPress={handleToggleMicrophone}
+            style={({ pressed }) => [
+              styles.muteButton,
+              { backgroundColor: colors.primary, opacity: pressed ? 0.9 : (agentRoomStore.isConnecting ? 0.5 : 1) }
+            ]}
+          >
+            <Ionicons
+              name={agentRoomStore.audioMuted ? "mic-off" : "mic"}
+              size={28}
+              color={colors.onPrimary}
+            />
+          </Pressable>
+        </View>
       </View>
 
       {/* Slide-up View for Agent Events */}
@@ -414,5 +418,17 @@ const styles = StyleSheet.create({
   controls: {
     padding: 24,
     gap: 8,
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  muteButton: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
