@@ -204,7 +204,11 @@ export default observer(function Home() {
               visible={agentRoomStore.binClassificationShouldShow}
             />
           ) : (
-            <Orb size={120} />
+            <Orb
+              size={120}
+              userAudioLevel={userAudioLevel}
+              aiAudioLevel={agentAudioLevel}
+            />
           )}
         </View>
 
