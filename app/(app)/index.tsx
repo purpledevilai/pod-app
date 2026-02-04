@@ -189,14 +189,16 @@ export default observer(function Home() {
         onPress={agentRoomStore.binClassificationShouldShow ? handleDismissBinClassification : undefined}
         disabled={!agentRoomStore.binClassificationShouldShow}
       >
-        {/* AI Messages (Top - Absolutely Positioned) - Always visible */}
-        <AIMessageDisplay
-          messages={agentRoomStore.aiMessages}
-          currentlySpeakingSentenceId={agentRoomStore.currentlySpeakingSentenceId}
-          visible={agentRoomStore.showAIMessages}
-        />
+        {/* AI Messages (Top - 50%) */}
+        <View style={styles.aiMessagesContainer}>
+          <AIMessageDisplay
+            messages={agentRoomStore.aiMessages}
+            currentlySpeakingSentenceId={agentRoomStore.currentlySpeakingSentenceId}
+            visible={agentRoomStore.showAIMessages}
+          />
+        </View>
 
-        {/* Central Content - Orb or Bin Classification */}
+        {/* Central Content - Orb or Bin Classification (30%) */}
         <View style={styles.orbContainer}>
           {agentRoomStore.binClassificationShouldShow && agentRoomStore.binClassificationImage ? (
             <BinClassificationView
@@ -212,13 +214,15 @@ export default observer(function Home() {
           )}
         </View>
 
-        {/* User Transcription (Below Orb) */}
-        {!agentRoomStore.binClassificationShouldShow && (
-          <TranscriptionDisplay 
-            messages={agentRoomStore.userMessages}
-            currentMessageId={agentRoomStore.currentUserMessageId}
-          />
-        )}
+        {/* User Transcription (Bottom - 20%) */}
+        <View style={styles.transcriptionContainer}>
+          {!agentRoomStore.binClassificationShouldShow && (
+            <TranscriptionDisplay 
+              messages={agentRoomStore.userMessages}
+              currentMessageId={agentRoomStore.currentUserMessageId}
+            />
+          )}
+        </View>
       </Pressable>
 
       {/* Controls */}
@@ -392,11 +396,20 @@ const styles = StyleSheet.create({
   },
   conversationContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'visible', // Allow child overflow
+  },
+  aiMessagesContainer: {
+    marginTop: 20,
+    flex: 5, // 50% of available height
   },
   orbContainer: {
-    padding: 40,
+    flex: 3, // 30% of available height
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'visible', // Allow orb effects to overflow
+  },
+  transcriptionContainer: {
+    flex: 2, // 20% of available height
   },
   controls: {
     padding: 24,

@@ -128,20 +128,16 @@ export const AIMessageDisplay = ({
 
 const styles = StyleSheet.create({
     container: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        maxHeight: 200,
+        flex: 1,
         paddingHorizontal: 24,
-        paddingVertical: 16,
-        zIndex: 10,
+        justifyContent: 'flex-end', // Align content to bottom of container
     },
     scrollView: {
-        flex: 1,
+        flexGrow: 0, // Don't grow beyond content
     },
     contentContainer: {
         gap: 12,
+        paddingVertical: 16,
     },
     messageContainer: {
         alignItems: 'center',

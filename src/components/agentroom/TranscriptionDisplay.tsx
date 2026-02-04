@@ -127,15 +127,16 @@ export const TranscriptionDisplay = ({ messages, currentMessageId }: Transcripti
 
 const styles = StyleSheet.create({
     container: {
-        maxHeight: 150,
+        flex: 1,
         paddingHorizontal: 24,
-        paddingVertical: 16,
+        justifyContent: 'flex-start', // Align content to top of container
     },
     scrollView: {
-        flex: 1,
+        flexGrow: 0, // Don't grow beyond content
     },
     contentContainer: {
         gap: 12,
+        paddingVertical: 16,
     },
     messageContainer: {
         alignItems: 'center',
