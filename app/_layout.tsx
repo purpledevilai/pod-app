@@ -2,6 +2,7 @@ import { ContentProvider } from '@/src/providers/ContentProvider';
 import { StoreProvider, useStores } from '@/src/providers/StoreProvider';
 import { ThemeProvider } from '@/src/providers/ThemeProvider';
 import { Outfit_400Regular as Outfit, Outfit_600SemiBold as OutfitSemi } from '@expo-google-fonts/outfit';
+import debug from 'debug';
 import { useFonts } from 'expo-font';
 import { router, Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -9,6 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
+debug.disable();
 SplashScreen.preventAutoHideAsync();
 
 export default function Root() {

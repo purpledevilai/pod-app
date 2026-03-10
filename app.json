@@ -16,7 +16,7 @@
         "NSCameraUsageDescription": "This app needs access to your camera for video calls.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.keanu-interone-ajentify.pod-app"
+      "bundleIdentifier": "com.podrecycling.pod-app"
     },
     "android": {
       "adaptiveIcon": {
@@ -40,7 +40,7 @@
         "INTERNET",
         "ACCESS_NETWORK_STATE"
       ],
-      "package": "com.keanuinteroneajentify.podapp"
+      "package": "com.podrecycling.podapp"
     },
     "web": {
       "bundler": "metro",
@@ -55,7 +55,7 @@
           "image": "./assets/images/pod.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#f7f9f7"
+          "backgroundColor": "#ffffff"
         }
       ],
       "expo-secure-store",

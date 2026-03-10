@@ -2,6 +2,7 @@ import { AIMessageDisplay } from '@/src/components/agentroom/AIMessageDisplay';
 import { ARLAndRICView } from '@/src/components/agentroom/ARLAndRICView';
 import { AudioPlayer } from '@/src/components/agentroom/AudioPlayer';
 import { BinClassificationView } from '@/src/components/agentroom/BinClassificationView';
+import { MenuDrawer } from '@/src/components/MenuDrawer';
 import { SlideUpView } from '@/src/components/agentroom/SlideUpView';
 import { TranscriptionDisplay } from '@/src/components/agentroom/TranscriptionDisplay';
 import { Orb } from '@/src/components/Orb';
@@ -13,7 +14,7 @@ import { createDefaultAgentContext } from '@/src/services/api/context/createcont
 import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
 /**
  * Home Screen - Main voice conversation interface
@@ -22,6 +23,7 @@ import { Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 export default observer(function Home() {
   const { agentRoomStore, authStore } = useStores();
   const { colors } = useTheme();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreatingContext, setIsCreatingContext] = useState(false);
   const [contextError, setContextError] = useState<string | undefined>();
   const [currentContextId, setCurrentContextId] = useState<string | undefined>();
@@ -35,12 +37,10 @@ export default observer(function Home() {
   useEffect(() => {
     agentRoomStore.setOnUserAudioLevel((level) => {
       setUserAudioLevel(level);
-      console.log(`[Home] User audio level: ${level.toFixed(4)}`);
     });
     
     agentRoomStore.setOnAgentAudioLevel((level) => {
       setAgentAudioLevel(level);
-      console.log(`[Home] Agent audio level: ${level.toFixed(4)}`);
     });
   }, [agentRoomStore]);
 
@@ -140,10 +140,29 @@ export default observer(function Home() {
     ? Object.values(agentRoomStore.roomConnection.peerConnections)[0]?.inboundMediaStream
     : undefined;
 
+  const topBar = (
+    <View style={styles.topBar}>
+      <Pressable
+        onPress={() => setIsMenuOpen(true)}
+        hitSlop={12}
+        style={styles.menuButton}
+      >
+        <Ionicons name="menu" size={28} color={colors.text} />
+      </Pressable>
+      <Image
+        source={require('@/assets/images/pod.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+      <View style={styles.menuButton} />
+    </View>
+  );
+
   // If not in a conversation or callibration, show start button
   if (!currentContextId || !agentRoomStore.hasCalibrated) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+        {topBar}
         <View style={styles.centerContent}>
           {contextError && (
             <View style={[styles.errorContainer, { backgroundColor: '#FEE2E2' }]}>
@@ -159,6 +178,7 @@ export default observer(function Home() {
             style={{ opacity: isCreatingContext || (currentContextId && !agentRoomStore.hasCalibrated) ? 0.5 : 1 }}
           />
         </View>
+        <MenuDrawer isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       </SafeAreaView>
     );
   }
@@ -166,6 +186,7 @@ export default observer(function Home() {
   // In conversation view
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      {topBar}
       {/* Audio Player (hidden, plays agent audio) */}
       <AudioPlayer stream={inboundAudioStream} />
 
@@ -257,6 +278,7 @@ export default observer(function Home() {
       >
         {renderSlideUpContent()}
       </SlideUpView>
+      <MenuDrawer isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
     </SafeAreaView>
   );
 });
@@ -336,6 +358,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  menuButton: {
+    width: 40,
+    padding: 4,
+  },
+  logo: {
+    width: 180,
+    height: 100,
+  },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
@@ -403,8 +440,7 @@ const styles = StyleSheet.create({
     overflow: 'visible', // Allow child overflow
   },
   aiMessagesContainer: {
-    marginTop: 20,
-    flex: 5, // 50% of available height
+    flex: 5,
   },
   orbContainer: {
     flex: 3, // 30% of available height
