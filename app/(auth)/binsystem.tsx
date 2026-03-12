@@ -39,17 +39,9 @@ export default observer(function BinSystemScreen() {
         acStore.setBinSystem(binSystem);
     }
 
-    async function onSubmit() {
-        if (!acStore.selectedBinSystem || acStore.binSystemLookUpLoading || acStore.createAccountLoading) return;
-        console.log("Creating account with bin system", acStore.selectedBinSystem.id);
-        try {
-            const response = await acStore.createAccount();
-            await authStore.loginWithTokens(response.access_token, response.refresh_token);
-            await authStore.fetchUser();
-            router.push('/(app)/landing');
-        } catch (error) {
-            console.log("Error creating account:", error);
-        } 
+    function onSubmit() {
+        if (!acStore.selectedBinSystem || acStore.binSystemLookUpLoading) return;
+        router.push('/(auth)/podconfiguration');
     }
 
     function renderBinSystemOption(binSystem: BinSystem, isSelected: boolean) {
@@ -122,15 +114,10 @@ export default observer(function BinSystemScreen() {
 
                 <View style={[styles.ctaWrap, { paddingHorizontal: space.lg, paddingBottom: space.lg }]}>
                     <Button
-                        title={acStore.createAccountLoading ? copy.screens.binSystem.ctaSubmitting : copy.screens.binSystem.ctaContinue}
+                        title={copy.screens.binSystem.ctaContinue}
                         onPress={onSubmit}
-                        style={{ opacity: acStore.selectedBinSystem && !acStore.createAccountLoading ? 1 : 0.5 }}
+                        style={{ opacity: acStore.selectedBinSystem ? 1 : 0.5 }}
                     />
-                    {acStore.createAccountError && (
-                        <Text size={14} style={{ color: '#FF0000', textAlign: 'center', marginTop: space.sm }}>
-                            {acStore.createAccountError}
-                        </Text>
-                    )}
                 </View>
             </View>
         </KeyboardAvoidingView>

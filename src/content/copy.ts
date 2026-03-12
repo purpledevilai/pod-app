@@ -71,8 +71,15 @@ Because when you know what to do in the moment, you help to turn waste into valu
         },
         binSystem: {
             title: "Which bin system do you use?",
-            ctaContinue: "Choose bin system",
-            ctaSubmitting: "Choosing\u2026"
+            ctaContinue: "Next",
+            ctaSubmitting: "Loading\u2026"
+        },
+        podConfiguration: {
+            title: "Do you have a Pod?",
+            subtitle: "Select your Pod configuration, or skip if you don\u2019t have one.",
+            ctaContinue: "Create account",
+            ctaSubmitting: "Creating account\u2026",
+            ctaSkip: "I don\u2019t have a Pod"
         }
     },
 } as const;

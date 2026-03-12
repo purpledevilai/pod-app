@@ -10,7 +10,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Text } from '@/src/components/ui/Text';
 import { useStores } from '@/src/providers/StoreProvider';
 import { useTheme } from '@/src/providers/ThemeProvider';
-import { createDefaultAgentContext } from '@/src/services/api/context/createcontext';
+import { createAgentContext } from '@/src/services/api/context/createcontext';
 import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
@@ -65,16 +65,13 @@ export default observer(function Home() {
       hasInitialized.current = true;
 
       console.log('[Home] Creating context...');
-      console.log('[Home] User profile:', JSON.stringify(authStore.user));
-      const context = await createDefaultAgentContext({
-        user_data: JSON.stringify(authStore.user)
-      });
+      const context = await createAgentContext();
       console.log('[Home] Context created:', context.context_id);
 
       setCurrentContextId(context.context_id);
 
       console.log('[Home] Initializing agent room...');
-      await agentRoomStore.initialize(context.context_id);
+      await agentRoomStore.initialize(context.context_id, context.client_api_key);
       console.log('[Home] Agent room initialized successfully');
 
     } catch (error) {
@@ -225,6 +222,7 @@ export default observer(function Home() {
           {agentRoomStore.binClassificationShouldShow && agentRoomStore.binClassificationImage ? (
             <BinClassificationView
               binImage={agentRoomStore.binClassificationImage}
+              podConfiguration={authStore.user?.pod_configuration}
               visible={agentRoomStore.binClassificationShouldShow}
             />
           ) : (

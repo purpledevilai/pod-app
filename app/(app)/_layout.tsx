@@ -14,6 +14,7 @@ export default function AppLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="landing" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

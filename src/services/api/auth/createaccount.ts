@@ -5,6 +5,7 @@ export interface CreateAccountRequest {
     create_account_token: string;
     council_id: string;
     bin_system_id: string;
+    pod_configuration: string;
 }
 
 export interface CreateAccountResponse {

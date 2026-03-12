@@ -136,8 +136,9 @@ export class AgentRoomStore {
     /**
      * Initializes media devices, sets up the room connection, and invites the agent
      * @param contextId The context ID to use as the room ID
+     * @param clientApiKey Short-lived client API key for authenticating with Ajentify services
      */
-    async initialize(contextId: string) {
+    async initialize(contextId: string, clientApiKey: string) {
         try {
             console.log('[AgentRoomStore] Starting initialization with context:', contextId);
             runInAction(() => {
@@ -199,7 +200,7 @@ export class AgentRoomStore {
 
             if (!hasAgent) {
                 console.log('[AgentRoomStore] No agent found, inviting agent...');
-                await this.inviteAgent(contextId);
+                await this.inviteAgent(contextId, clientApiKey);
             } else {
                 console.log('[AgentRoomStore] Agent already in room');
             }
@@ -216,7 +217,7 @@ export class AgentRoomStore {
     /**
      * Invite the agent to join the room
      */
-    private async inviteAgent(contextId: string) {
+    private async inviteAgent(contextId: string, clientApiKey: string) {
         try {
             console.log('[AgentRoomStore] Calling agent server to invite agent...');
             const agentServerUrl = process.env.EXPO_PUBLIC_AGENT_SERVER_URL || 'http://localhost:8000';
@@ -226,6 +227,7 @@ export class AgentRoomStore {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
+                        "Authorization": clientApiKey,
                     },
                     body: JSON.stringify({
                         context_id: contextId,

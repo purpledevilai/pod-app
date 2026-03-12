@@ -4,7 +4,7 @@ import { councilsForPostCode, CouncilsForPostcodeResponse } from '@/src/services
 import { makeAutoObservable, runInAction } from 'mobx';
 import { BinSystem } from '../services/api/types/binsystem';
 import { Council } from '../services/api/types/council';
-import { User } from '../services/api/types/user';
+import { PodConfiguration, User } from '../services/api/types/user';
 
 export class AccountCreationStore {
     email: string | null = null;
@@ -21,6 +21,8 @@ export class AccountCreationStore {
     binSystemLookUpError: string | null = null;
     binSystems: BinSystem[] = [];
     selectedBinSystem: BinSystem | null = null;
+
+    selectedPodConfiguration: PodConfiguration = 'none';
 
     createAccountLoading: boolean = false;
     createAccountError: string | null = null;
@@ -104,6 +106,10 @@ export class AccountCreationStore {
         this.selectedBinSystem = binSystem;
     }
 
+    setPodConfiguration(config: PodConfiguration) {
+        this.selectedPodConfiguration = config;
+    }
+
     setCreateAccountToken(token: string) {
         this.createAccountToken = token;
     }
@@ -122,7 +128,8 @@ export class AccountCreationStore {
             const response: CreateAccountResponse = await createAccount({
                 create_account_token: this.createAccountToken,
                 council_id: this.selectedCouncilId,
-                bin_system_id: this.selectedBinSystem.id
+                bin_system_id: this.selectedBinSystem.id,
+                pod_configuration: this.selectedPodConfiguration
             });
 
             runInAction(() => { 
