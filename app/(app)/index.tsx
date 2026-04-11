@@ -155,8 +155,18 @@ export default observer(function Home() {
     </View>
   );
 
-  // If not in a conversation or callibration, show start button
-  if (!currentContextId || !agentRoomStore.hasCalibrated) {
+  // Determine the loading status label
+  const getStatusLabel = () => {
+    if (isCreatingContext) return "Starting...";
+    if (!currentContextId) return "Start Conversation";
+    if (!agentRoomStore.isTranscriptionReady) return "Waking up servers...";
+    if (!agentRoomStore.hasCalibrated) return "Calibrating...";
+    return "Getting ready...";
+  };
+  const isWaiting = isCreatingContext || (currentContextId && !agentRoomStore.isReady);
+
+  // If not in a conversation, or still waiting for full startup, show start/status button
+  if (!currentContextId || !agentRoomStore.isReady) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         {topBar}
@@ -170,9 +180,9 @@ export default observer(function Home() {
           )}
 
           <Button
-            title={isCreatingContext ? "Starting..." : (currentContextId && !agentRoomStore.hasCalibrated) ? "Calibrating..." : "Start Conversation"}
+            title={getStatusLabel()}
             onPress={handleStartConversation}
-            style={{ opacity: isCreatingContext || (currentContextId && !agentRoomStore.hasCalibrated) ? 0.5 : 1 }}
+            style={{ opacity: isWaiting ? 0.5 : 1 }}
           />
         </View>
         <MenuDrawer isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />

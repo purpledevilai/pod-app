@@ -20,8 +20,10 @@ export class AgentRoomStore {
     // Connection states
     isConnecting = true;
     isConnected = false;
+    isTranscriptionReady = false;
     isCalibrating = false;
     hasCalibrated = false;
+    isReady = false;
     
     // Speech states
     isUserSpeaking = false;
@@ -95,8 +97,10 @@ export class AgentRoomStore {
         this.audioMuted = false;
         this.isConnecting = true;
         this.isConnected = false;
+        this.isTranscriptionReady = false;
         this.isCalibrating = false;
         this.hasCalibrated = false;
+        this.isReady = false;
         this.isUserSpeaking = false;
         this.currentDetectedSpeech = undefined;
         this.userMessages = [];
@@ -356,6 +360,19 @@ export class AgentRoomStore {
             });
         });
 
+        this.agentRPCLayer.on("agent_status", ({status}) => {
+            console.log(`[AgentRoomStore] Agent status: ${status}`);
+            runInAction(() => {
+                if (status === "waking_up") {
+                    this.isTranscriptionReady = false;
+                } else if (status === "calibrating") {
+                    this.isTranscriptionReady = true;
+                } else if (status === "ready") {
+                    this.isReady = true;
+                }
+            });
+        });
+
         this.agentRPCLayer.on("is_speaking_status", ({is_speaking}) => {
             console.log(`[AgentRoomStore] User speaking: ${is_speaking}`);
             runInAction(() => {
@@ -408,7 +425,6 @@ export class AgentRoomStore {
             runInAction(() => {
                 this.aiMessages.push({ sentence, sentence_id });
                 this.showAIMessages = true;
-                this.hasCalibrated = true; // Kluge to make UI State look better when ai starts speaking first
             });
         });
 
