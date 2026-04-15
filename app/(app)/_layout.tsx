@@ -15,6 +15,7 @@ export default function AppLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="landing" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="bin-config-preview" />
     </Stack>
   );
 }

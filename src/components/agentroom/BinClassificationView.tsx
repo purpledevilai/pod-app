@@ -9,29 +9,81 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PodConfiguration } from '@/src/services/api/types/user';
 
-const BIN_IMAGE_MAP: Record<string, ImageSourcePropType> = {
-    'bin-yellow.png': require('@/assets/images/bins/bin-yellow.png'),
-    'bin-red.png': require('@/assets/images/bins/bin-red.png'),
-    'bin-blue.png': require('@/assets/images/bins/bin-blue.png'),
-    'bin-darkgreen.png': require('@/assets/images/bins/bin-darkgreen.png'),
-    'bin-lightgreen.png': require('@/assets/images/bins/bin-lightgreen.png'),
-    'bin-purple.png': require('@/assets/images/bins/bin-purple.png'),
-    'bin-maroon.png': require('@/assets/images/bins/bin-maroon.png'),
+const KERBSIDE_BIN_IMAGE_MAP: Record<string, ImageSourcePropType> = {
+    'yellow': require('@/assets/images/bins/bin-yellow.png'),
+    'red': require('@/assets/images/bins/bin-red.png'),
+    'blue': require('@/assets/images/bins/bin-blue.png'),
+    'green': require('@/assets/images/bins/bin-darkgreen.png'),
+    'lime green': require('@/assets/images/bins/bin-lightgreen.png'),
+    'purple': require('@/assets/images/bins/bin-purple.png'),
+    'maroon': require('@/assets/images/bins/bin-maroon.png'),
 };
 
-const POD_CONFIG_IMAGES: Partial<Record<PodConfiguration, ImageSourcePropType>> = {
-    freestanding: require('@/assets/images/pod_bins/freestanding_top_open.png'),
-    in_drawer: require('@/assets/images/pod_bins/drawer.png'),
-    under_sink: require('@/assets/images/pod_bins/undersink.png'),
+const POD_BIN_IMAGES = {
+    drawer: require('@/assets/images/pod_bins/drawer.png'),
+    undersink: require('@/assets/images/pod_bins/undersink.png'),
+    freestanding_top: require('@/assets/images/pod_bins/freestanding_top_open.png'),
+    freestanding_bottom: require('@/assets/images/pod_bins/freestanding_bottom_open.png'),
 };
 
-interface BinClassificationViewProps {
-    binImage: string;
-    podConfiguration?: PodConfiguration;
-    visible: boolean;
+export type PodBinKey =
+    | 'drawer-red' | 'drawer-yellow' | 'drawer-green' | 'drawer-white'
+    | 'undersink-red' | 'undersink-yellow' | 'undersink-green' | 'undersink-white'
+    | 'freestanding-top-red' | 'freestanding-top-green'
+    | 'freestanding-bottom-yellow' | 'freestanding-bottom-white';
+
+interface PodBinConfig {
+    image: ImageSourcePropType;
+    arrowPosition: { x: number; y: number };
 }
 
-export const BinClassificationView = ({ binImage, podConfiguration, visible }: BinClassificationViewProps) => {
+export const POD_BIN_CONFIG: Record<PodBinKey, PodBinConfig> = {
+    'drawer-red':               { image: POD_BIN_IMAGES.drawer, arrowPosition: { x: 0.4, y: 0.42 } },
+    'drawer-yellow':            { image: POD_BIN_IMAGES.drawer, arrowPosition: { x: 0.55, y: 0.4 } },
+    'drawer-green':             { image: POD_BIN_IMAGES.drawer, arrowPosition: { x: 0.46, y: 0.46 } },
+    'drawer-white':             { image: POD_BIN_IMAGES.drawer, arrowPosition: { x: 0.63, y: 0.35 } },
+    'undersink-red':            { image: POD_BIN_IMAGES.undersink, arrowPosition: { x: 0.33, y: 0.51 } },
+    'undersink-yellow':         { image: POD_BIN_IMAGES.undersink, arrowPosition: { x: 0.5, y: 0.5 } },
+    'undersink-green':          { image: POD_BIN_IMAGES.undersink, arrowPosition: { x: 0.44, y: 0.53 } },
+    'undersink-white':          { image: POD_BIN_IMAGES.undersink, arrowPosition: { x: 0.49, y: 0.43 } },
+    'freestanding-top-red':     { image: POD_BIN_IMAGES.freestanding_top, arrowPosition: { x: 0.47, y: 0.4 } },
+    'freestanding-top-green':   { image: POD_BIN_IMAGES.freestanding_top, arrowPosition: { x: 0.4, y: 0.35 } },
+    'freestanding-bottom-yellow': { image: POD_BIN_IMAGES.freestanding_bottom, arrowPosition: { x: 0.38, y: 0.56 } },
+    'freestanding-bottom-white':  { image: POD_BIN_IMAGES.freestanding_bottom, arrowPosition: { x: 0.34, y: 0.49 } },
+};
+
+function getPodBinKey(podConfiguration: PodConfiguration, color: string): PodBinKey | undefined {
+    if (podConfiguration === 'in_drawer') {
+        const key = `drawer-${color}` as PodBinKey;
+        return key in POD_BIN_CONFIG ? key : undefined;
+    }
+    if (podConfiguration === 'under_sink') {
+        const key = `undersink-${color}` as PodBinKey;
+        return key in POD_BIN_CONFIG ? key : undefined;
+    }
+    if (podConfiguration === 'freestanding') {
+        if (color === 'yellow' || color === 'white') {
+            const key = `freestanding-bottom-${color}` as PodBinKey;
+            return key in POD_BIN_CONFIG ? key : undefined;
+        }
+        const key = `freestanding-top-${color}` as PodBinKey;
+        return key in POD_BIN_CONFIG ? key : undefined;
+    }
+    return undefined;
+}
+
+const POD_IMAGE_SIZE = 340;
+
+interface BinClassificationViewProps {
+    color: string;
+    binType?: "kerbside" | "pod";
+    podConfiguration?: PodConfiguration;
+    visible: boolean;
+    /** When set, bypasses normal podConfiguration/color logic and directly uses this config key */
+    previewConfigKey?: PodBinKey;
+}
+
+export const BinClassificationView = ({ color, binType, podConfiguration, visible, previewConfigKey }: BinClassificationViewProps) => {
     const opacity = useSharedValue(0);
     const scale = useSharedValue(0.8);
     const arrowTranslateY = useSharedValue(0);
@@ -68,25 +120,45 @@ export const BinClassificationView = ({ binImage, podConfiguration, visible }: B
         return null;
     }
 
-    const podImage = podConfiguration && podConfiguration !== 'none'
-        ? POD_CONFIG_IMAGES[podConfiguration]
-        : null;
+    const isPod = binType === 'pod' || !!previewConfigKey;
+    const podBinKey = previewConfigKey
+        ?? (isPod && podConfiguration && podConfiguration !== 'none'
+            ? getPodBinKey(podConfiguration, color)
+            : undefined);
+    const podBinConfig = podBinKey ? POD_BIN_CONFIG[podBinKey] : undefined;
 
-    const binSource = BIN_IMAGE_MAP[binImage] || require('@/assets/images/bins/no-bins-ic.png');
+    const kerbsideBinSource = !isPod
+        ? (KERBSIDE_BIN_IMAGE_MAP[color] || require('@/assets/images/bins/no-bins-ic.png'))
+        : null;
 
     return (
         <Animated.View style={[styles.container, animatedContainerStyle]}>
-            {podImage ? (
-                // Show pod configuration image when user has a Pod
+            {isPod && podBinConfig ? (
                 <View style={styles.podContainer}>
-                    <Image
-                        source={podImage}
-                        style={styles.podImage}
-                        resizeMode="contain"
-                    />
+                    <View style={{ width: POD_IMAGE_SIZE, height: POD_IMAGE_SIZE }}>
+                        <Image
+                            source={podBinConfig.image}
+                            style={styles.podImage}
+                            resizeMode="contain"
+                        />
+                        <Animated.View
+                            style={[
+                                styles.podArrowContainer,
+                                animatedArrowStyle,
+                                {
+                                    left: podBinConfig.arrowPosition.x * POD_IMAGE_SIZE - 10,
+                                    top: podBinConfig.arrowPosition.y * POD_IMAGE_SIZE - 57,
+                                },
+                            ]}
+                        >
+                            <View style={styles.arrow}>
+                                <View style={styles.arrowLine} />
+                                <View style={styles.arrowHead} />
+                            </View>
+                        </Animated.View>
+                    </View>
                 </View>
-            ) : (
-                // Fallback: show individual bin with floating arrow
+            ) : kerbsideBinSource ? (
                 <>
                     <Animated.View style={[styles.arrowContainer, animatedArrowStyle]}>
                         <View style={styles.arrow}>
@@ -96,13 +168,13 @@ export const BinClassificationView = ({ binImage, podConfiguration, visible }: B
                     </Animated.View>
                     <View style={styles.binContainer}>
                         <Image
-                            source={binSource}
+                            source={kerbsideBinSource}
                             style={styles.binImage}
                             resizeMode="contain"
                         />
                     </View>
                 </>
-            )}
+            ) : null}
         </Animated.View>
     );
 };
@@ -142,8 +214,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     podImage: {
-        width: 240,
-        height: 240,
+        width: POD_IMAGE_SIZE,
+        height: POD_IMAGE_SIZE,
+    },
+    podArrowContainer: {
+        position: 'absolute',
     },
     binContainer: {
         alignItems: 'center',
@@ -154,4 +229,3 @@ const styles = StyleSheet.create({
         height: 180,
     },
 });
-

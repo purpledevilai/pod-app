@@ -45,7 +45,8 @@ export class AgentRoomStore {
     
     // Bin classification view
     binClassificationShouldShow = false;
-    binClassificationImage: string | undefined = undefined;
+    binClassificationColor: string | undefined = undefined;
+    binClassificationType: "kerbside" | "pod" | undefined = undefined;
     private binClassificationHideTimer: number | undefined = undefined;
     
     // RPC layer for agent communication
@@ -113,7 +114,8 @@ export class AgentRoomStore {
         this.slideUpViewShouldShow = false;
         this.slideUpViewContentType = undefined;
         this.binClassificationShouldShow = false;
-        this.binClassificationImage = undefined;
+        this.binClassificationColor = undefined;
+        this.binClassificationType = undefined;
         if (this.binClassificationHideTimer) {
             clearTimeout(this.binClassificationHideTimer);
             this.binClassificationHideTimer = undefined;
@@ -471,37 +473,21 @@ export class AgentRoomStore {
                 });
                 break;
             
-            case "show_bin_classification":
-                // Show the bin classification with appropriate bin image
-                const appearance = tool_input?.appearance?.toLowerCase() || "";
-                
-                // Map appearance to bin image
-                const binImageMap: Record<string, string> = {
-                    "yellow": "bin-yellow.png",
-                    "red": "bin-red.png",
-                    "blue": "bin-blue.png",
-                    "green": "bin-darkgreen.png",
-                    "lime green": "bin-lightgreen.png",
-                    "purple": "bin-purple.png",
-                    "maroon": "bin-maroon.png",
-                };
-                
-                const binImage = binImageMap[appearance] || "no-bins-ic.png";
+            case "show_bin": {
+                const binType = tool_input?.type as "kerbside" | "pod" || "kerbside";
+                const color = tool_input?.color?.toLowerCase() || "";
                 
                 runInAction(() => {
-                    // Dismiss slide-up view if showing
                     this.slideUpViewShouldShow = false;
                     
-                    // Clear any existing timer
                     if (this.binClassificationHideTimer) {
                         clearTimeout(this.binClassificationHideTimer);
                     }
                     
-                    // Show bin classification
-                    this.binClassificationImage = binImage;
+                    this.binClassificationType = binType;
+                    this.binClassificationColor = color;
                     this.binClassificationShouldShow = true;
                     
-                    // Auto-hide after 10 seconds
                     this.binClassificationHideTimer = setTimeout(() => {
                         runInAction(() => {
                             this.binClassificationShouldShow = false;
@@ -510,6 +496,7 @@ export class AgentRoomStore {
                     }, 10000);
                 });
                 break;
+            }
             
             // Add more tool names here as needed
             default:

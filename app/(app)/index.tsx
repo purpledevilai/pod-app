@@ -229,9 +229,10 @@ export default observer(function Home() {
 
         {/* Central Content - Orb or Bin Classification (30%) */}
         <View style={styles.orbContainer}>
-          {agentRoomStore.binClassificationShouldShow && agentRoomStore.binClassificationImage ? (
+          {agentRoomStore.binClassificationShouldShow && (agentRoomStore.binClassificationColor || agentRoomStore.binClassificationType === "pod") ? (
             <BinClassificationView
-              binImage={agentRoomStore.binClassificationImage}
+              color={agentRoomStore.binClassificationColor || ""}
+              binType={agentRoomStore.binClassificationType}
               podConfiguration={authStore.user?.pod_configuration}
               visible={agentRoomStore.binClassificationShouldShow}
             />

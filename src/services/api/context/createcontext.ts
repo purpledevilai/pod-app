@@ -13,8 +13,11 @@ export interface CreateAgentContextResponse {
 export async function createAgentContext(): Promise<CreateAgentContextResponse> {
     try {
         const response = await apiClient.post('/create-agent-context');
+        const data = response.data as CreateAgentContextResponse;
 
-        return response.data as CreateAgentContextResponse;
+        console.log('[createAgentContext] Context created:', data.context_id);
+
+        return data;
     } catch (error) {
         const errorMessage = (error as Error).message || 'An unknown error occurred creating the context';
         console.error('[createAgentContext] Error:', errorMessage);
