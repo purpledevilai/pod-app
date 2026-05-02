@@ -13,7 +13,7 @@ export class RootStore {
   constructor() {
     this.authStore = new AuthStore();
     this.accountCreationStore = new AccountCreationStore();
-    this.agentRoomStore = new AgentRoomStore();
+    this.agentRoomStore = new AgentRoomStore(this.authStore);
     makeAutoObservable(this, {}, { autoBind: true });
   }
 

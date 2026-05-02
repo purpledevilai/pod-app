@@ -107,7 +107,7 @@ export const MenuDrawer = observer(({ isOpen, onClose }: MenuDrawerProps) => {
           
           {/* Points */}
           <Text style={[styles.points, { color: colors.text, marginTop: space.sm }]}>
-            Points: 5
+            Points: {authStore.user?.points ?? 0}
           </Text>
         </View>
 

@@ -1,0 +1,32 @@
+EAS BUILD + SUBMIT CHEATSHEET
+=============================
+
+Production iOS (build + auto-submit to App Store Connect in one go):
+
+    eas build --profile production --platform ios --auto-submit
+
+Equivalent two-step (if you want to inspect the build before submitting):
+
+    npm run build:prod:ios     # eas build --profile production --platform ios
+    npm run submit:ios         # eas submit --platform ios
+
+
+Production Android (build only — no submit script wired up yet):
+
+    npm run build:prod:android
+    # then, if/when Play Store submit creds are configured in eas.json:
+    # eas submit --platform android
+
+
+Preview / internal distribution builds:
+
+    npm run build:preview:ios       # internal TestFlight-style iOS build
+    npm run build:preview:android   # internal .apk
+    npm run build:preview:all       # both platforms, preview profile
+
+
+Local dev:
+
+    npx expo start                  # Metro bundler / dev client
+    npm run ios                     # expo run:ios (native build, requires Xcode)
+    npm run android                 # expo run:android

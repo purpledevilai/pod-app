@@ -5,7 +5,40 @@ import { RoomConnection } from "@/src/services/webrtc/RoomConnection";
 import { makeAutoObservable, runInAction } from "mobx";
 import InCallManager from 'react-native-incall-manager';
 import { MediaStream } from 'react-native-webrtc';
+import { AuthStore } from "./auth.store";
 import { mediaDeviceStore } from "./mediadevice.store";
+
+type BinSpec = { type: "kerbside" | "pod"; color: string };
+
+const PER_BIN_MS = 6000;
+const REWARD_PANEL_MS = 3000;
+
+/**
+ * The agent server delivers tool_output as a string built from Python's `str(dict)`
+ * (single-quoted, e.g. `"{'new_total': 20}"`) rather than valid JSON. Accept either an
+ * already-parsed object or a string in either JSON or Python-repr form, and return a
+ * plain object — or undefined if we couldn't make sense of it.
+ */
+function parseToolOutput(raw: any): Record<string, any> | undefined {
+    if (raw == null) return undefined;
+    if (typeof raw === "object") return raw;
+    if (typeof raw !== "string") return undefined;
+
+    try {
+        return JSON.parse(raw);
+    } catch {}
+    try {
+        // Cheap Python-repr -> JSON: swap single quotes for double, normalise booleans/None.
+        const jsonish = raw
+            .replace(/'/g, '"')
+            .replace(/\bTrue\b/g, "true")
+            .replace(/\bFalse\b/g, "false")
+            .replace(/\bNone\b/g, "null");
+        return JSON.parse(jsonish);
+    } catch {
+        return undefined;
+    }
+}
 
 /**
  * AgentRoomStore - Main store for managing the voice conversation with the AI agent
@@ -43,11 +76,18 @@ export class AgentRoomStore {
     slideUpViewShouldShow = false;
     slideUpViewContentType: string | undefined = undefined;
     
-    // Bin classification view
+    // Bin classification view (queue of bins, animated one after another)
     binClassificationShouldShow = false;
-    binClassificationColor: string | undefined = undefined;
-    binClassificationType: "kerbside" | "pod" | undefined = undefined;
-    private binClassificationHideTimer: number | undefined = undefined;
+    binClassificationQueue: BinSpec[] = [];
+    binClassificationIndex = 0;
+    private binClassificationAdvanceTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+
+    // Reward panel (shown after the bin queue finishes when show_reward + points > 0)
+    rewardPanelShouldShow = false;
+    rewardPanelPoints: number | undefined = undefined;
+    private rewardPanelHideTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+    private pendingShowReward = false;
+    private pendingRewardPoints = 0;
     
     // RPC layer for agent communication
     agentRPCLayer: JSONRPCPeer | undefined = undefined;
@@ -63,8 +103,19 @@ export class AgentRoomStore {
     // Error handling
     initializationError: string | undefined = undefined;
 
-    constructor() {
+    private authStore: AuthStore;
+
+    constructor(authStore: AuthStore) {
+        this.authStore = authStore;
         makeAutoObservable(this);
+    }
+
+    get currentBinColor(): string | undefined {
+        return this.binClassificationQueue[this.binClassificationIndex]?.color;
+    }
+
+    get currentBinType(): "kerbside" | "pod" | undefined {
+        return this.binClassificationQueue[this.binClassificationIndex]?.type;
     }
 
     /**
@@ -114,12 +165,20 @@ export class AgentRoomStore {
         this.slideUpViewShouldShow = false;
         this.slideUpViewContentType = undefined;
         this.binClassificationShouldShow = false;
-        this.binClassificationColor = undefined;
-        this.binClassificationType = undefined;
-        if (this.binClassificationHideTimer) {
-            clearTimeout(this.binClassificationHideTimer);
-            this.binClassificationHideTimer = undefined;
+        this.binClassificationQueue = [];
+        this.binClassificationIndex = 0;
+        if (this.binClassificationAdvanceTimer) {
+            clearTimeout(this.binClassificationAdvanceTimer);
+            this.binClassificationAdvanceTimer = undefined;
         }
+        this.rewardPanelShouldShow = false;
+        this.rewardPanelPoints = undefined;
+        if (this.rewardPanelHideTimer) {
+            clearTimeout(this.rewardPanelHideTimer);
+            this.rewardPanelHideTimer = undefined;
+        }
+        this.pendingShowReward = false;
+        this.pendingRewardPoints = 0;
         this.initializationError = undefined;
         
         console.log('[AgentRoomStore] Reset complete');
@@ -453,7 +512,7 @@ export class AgentRoomStore {
 
         this.agentRPCLayer.on("tool_response", ({tool_name, tool_output}) => {
             console.log(`[AgentRoomStore] Tool response: ${tool_name}`, tool_output);
-            // Tool responses are logged but not used for UI triggers
+            this.agentToolResponseHandler(tool_name, tool_output);
         });
     }
 
@@ -474,26 +533,39 @@ export class AgentRoomStore {
                 break;
             
             case "show_bin": {
-                const binType = tool_input?.type as "kerbside" | "pod" || "kerbside";
-                const color = tool_input?.color?.toLowerCase() || "";
-                
+                const rawBins = Array.isArray(tool_input?.bins) ? tool_input.bins : [];
+                const queue: BinSpec[] = rawBins.map((b: any) => ({
+                    type: (b?.type === "pod" ? "pod" : "kerbside") as "kerbside" | "pod",
+                    color: typeof b?.color === "string" ? b.color.toLowerCase() : "",
+                }));
+
+                const showReward = !!tool_input?.show_reward;
+                const points = Number(tool_input?.points) || 0;
+
                 runInAction(() => {
                     this.slideUpViewShouldShow = false;
-                    
-                    if (this.binClassificationHideTimer) {
-                        clearTimeout(this.binClassificationHideTimer);
+                    this.clearBinAndRewardTimers();
+                    this.rewardPanelShouldShow = false;
+                    this.rewardPanelPoints = undefined;
+
+                    this.pendingShowReward = showReward;
+                    this.pendingRewardPoints = points;
+
+                    if (queue.length === 0) {
+                        this.binClassificationQueue = [];
+                        this.binClassificationIndex = 0;
+                        this.binClassificationShouldShow = false;
+                        // No bins to show; if a reward is somehow pending, fire the reward panel directly.
+                        if (showReward && points > 0) {
+                            this.showRewardPanel();
+                        }
+                        return;
                     }
-                    
-                    this.binClassificationType = binType;
-                    this.binClassificationColor = color;
+
+                    this.binClassificationQueue = queue;
+                    this.binClassificationIndex = 0;
                     this.binClassificationShouldShow = true;
-                    
-                    this.binClassificationHideTimer = setTimeout(() => {
-                        runInAction(() => {
-                            this.binClassificationShouldShow = false;
-                            this.binClassificationHideTimer = undefined;
-                        });
-                    }, 10000);
+                    this.scheduleNextBinAdvance();
                 });
                 break;
             }
@@ -505,19 +577,105 @@ export class AgentRoomStore {
     }
 
     /**
-     * Dismiss the bin classification view
+     * Handle tool responses from the agent.
+     * For show_bin we keep the user's points total in sync with the authoritative value
+     * returned by the backend (new_total).
      */
-    dismissBinClassification = () => {
-        console.log('[AgentRoomStore] Dismissing bin classification');
-        
-        // Clear the auto-hide timer if it exists
-        if (this.binClassificationHideTimer) {
-            clearTimeout(this.binClassificationHideTimer);
-            this.binClassificationHideTimer = undefined;
+    private agentToolResponseHandler(tool_name: string, tool_output: any) {
+        if (tool_name !== "show_bin") return;
+
+        const parsed = parseToolOutput(tool_output);
+        const newTotal = parsed?.new_total;
+        if (typeof newTotal !== "number") return;
+
+        runInAction(() => {
+            if (this.authStore.user) {
+                this.authStore.user.points = newTotal;
+            }
+        });
+    }
+
+    /**
+     * Schedule the timer that advances to the next bin in the queue (or, when the queue
+     * is exhausted, hands off to the reward panel).
+     */
+    private scheduleNextBinAdvance() {
+        if (this.binClassificationAdvanceTimer) {
+            clearTimeout(this.binClassificationAdvanceTimer);
         }
-        
-        // Hide the view
+        this.binClassificationAdvanceTimer = setTimeout(() => {
+            runInAction(() => {
+                this.binClassificationAdvanceTimer = undefined;
+                const nextIndex = this.binClassificationIndex + 1;
+                if (nextIndex < this.binClassificationQueue.length) {
+                    this.binClassificationIndex = nextIndex;
+                    this.scheduleNextBinAdvance();
+                } else {
+                    this.finishBinSequence();
+                }
+            });
+        }, PER_BIN_MS);
+    }
+
+    /**
+     * End-of-queue handler: hide the bin classification view, then conditionally show
+     * the reward panel.
+     */
+    private finishBinSequence() {
         this.binClassificationShouldShow = false;
+        this.binClassificationQueue = [];
+        this.binClassificationIndex = 0;
+
+        if (this.pendingShowReward && this.pendingRewardPoints > 0) {
+            this.showRewardPanel();
+        }
+    }
+
+    private showRewardPanel() {
+        this.rewardPanelPoints = this.pendingRewardPoints;
+        this.rewardPanelShouldShow = true;
+
+        if (this.rewardPanelHideTimer) {
+            clearTimeout(this.rewardPanelHideTimer);
+        }
+        this.rewardPanelHideTimer = setTimeout(() => {
+            runInAction(() => {
+                this.rewardPanelShouldShow = false;
+                this.rewardPanelPoints = undefined;
+                this.rewardPanelHideTimer = undefined;
+                this.pendingShowReward = false;
+                this.pendingRewardPoints = 0;
+            });
+        }, REWARD_PANEL_MS);
+    }
+
+    private clearBinAndRewardTimers() {
+        if (this.binClassificationAdvanceTimer) {
+            clearTimeout(this.binClassificationAdvanceTimer);
+            this.binClassificationAdvanceTimer = undefined;
+        }
+        if (this.rewardPanelHideTimer) {
+            clearTimeout(this.rewardPanelHideTimer);
+            this.rewardPanelHideTimer = undefined;
+        }
+    }
+
+    /**
+     * Dismiss whichever in-call overlay is currently shown (bin sequence or reward panel)
+     * and clear all related timers/state.
+     */
+    dismissActiveOverlay = () => {
+        console.log('[AgentRoomStore] Dismissing active overlay');
+        runInAction(() => {
+            this.clearBinAndRewardTimers();
+            this.binClassificationShouldShow = false;
+            this.binClassificationQueue = [];
+            this.binClassificationIndex = 0;
+            this.rewardPanelShouldShow = false;
+            this.rewardPanelPoints = undefined;
+            this.pendingShowReward = false;
+            this.pendingRewardPoints = 0;
+        });
     }
 
     /**

@@ -2,6 +2,7 @@ import { AIMessageDisplay } from '@/src/components/agentroom/AIMessageDisplay';
 import { ARLAndRICView } from '@/src/components/agentroom/ARLAndRICView';
 import { AudioPlayer } from '@/src/components/agentroom/AudioPlayer';
 import { BinClassificationView } from '@/src/components/agentroom/BinClassificationView';
+import { RewardPanel } from '@/src/components/agentroom/RewardPanel';
 import { MenuDrawer } from '@/src/components/MenuDrawer';
 import { SlideUpView } from '@/src/components/agentroom/SlideUpView';
 import { TranscriptionDisplay } from '@/src/components/agentroom/TranscriptionDisplay';
@@ -114,10 +115,10 @@ export default observer(function Home() {
   };
 
   /**
-   * Dismiss the bin classification view
+   * Dismiss whichever in-call overlay is currently active (bin sequence or reward panel)
    */
-  const handleDismissBinClassification = () => {
-    agentRoomStore.dismissBinClassification();
+  const handleDismissActiveOverlay = () => {
+    agentRoomStore.dismissActiveOverlay();
   };
 
   /**
@@ -215,8 +216,8 @@ export default observer(function Home() {
       {/* Main Conversation UI */}
       <Pressable 
         style={styles.conversationContainer}
-        onPress={agentRoomStore.binClassificationShouldShow ? handleDismissBinClassification : undefined}
-        disabled={!agentRoomStore.binClassificationShouldShow}
+        onPress={(agentRoomStore.binClassificationShouldShow || agentRoomStore.rewardPanelShouldShow) ? handleDismissActiveOverlay : undefined}
+        disabled={!agentRoomStore.binClassificationShouldShow && !agentRoomStore.rewardPanelShouldShow}
       >
         {/* AI Messages (Top - 50%) */}
         <View style={styles.aiMessagesContainer}>
@@ -227,14 +228,19 @@ export default observer(function Home() {
           />
         </View>
 
-        {/* Central Content - Orb or Bin Classification (30%) */}
+        {/* Central Content - Orb, Bin Classification, or Reward Panel (30%) */}
         <View style={styles.orbContainer}>
-          {agentRoomStore.binClassificationShouldShow && (agentRoomStore.binClassificationColor || agentRoomStore.binClassificationType === "pod") ? (
+          {agentRoomStore.binClassificationShouldShow && (agentRoomStore.currentBinColor || agentRoomStore.currentBinType === "pod") ? (
             <BinClassificationView
-              color={agentRoomStore.binClassificationColor || ""}
-              binType={agentRoomStore.binClassificationType}
+              color={agentRoomStore.currentBinColor || ""}
+              binType={agentRoomStore.currentBinType}
               podConfiguration={authStore.user?.pod_configuration}
               visible={agentRoomStore.binClassificationShouldShow}
+            />
+          ) : agentRoomStore.rewardPanelShouldShow ? (
+            <RewardPanel
+              points={agentRoomStore.rewardPanelPoints ?? 0}
+              visible={agentRoomStore.rewardPanelShouldShow}
             />
           ) : (
             <Orb
@@ -247,7 +253,7 @@ export default observer(function Home() {
 
         {/* User Transcription (Bottom - 20%) */}
         <View style={styles.transcriptionContainer}>
-          {!agentRoomStore.binClassificationShouldShow && (
+          {!agentRoomStore.binClassificationShouldShow && !agentRoomStore.rewardPanelShouldShow && (
             <TranscriptionDisplay 
               messages={agentRoomStore.userMessages}
               currentMessageId={agentRoomStore.currentUserMessageId}
