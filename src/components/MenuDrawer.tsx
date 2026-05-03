@@ -119,7 +119,7 @@ export const MenuDrawer = observer(({ isOpen, onClose }: MenuDrawerProps) => {
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </Pressable>
 
-          <Pressable style={styles.menuItem} onPress={() => console.log('Community pressed')}>
+          {/* <Pressable style={styles.menuItem} onPress={() => console.log('Community pressed')}>
             <Ionicons name="globe-outline" size={24} color={colors.text} />
             <Text style={[styles.menuItemText, { color: colors.text }]}>Community</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
@@ -135,7 +135,7 @@ export const MenuDrawer = observer(({ isOpen, onClose }: MenuDrawerProps) => {
             <Ionicons name="information-circle-outline" size={24} color={colors.text} />
             <Text style={[styles.menuItemText, { color: colors.text }]}>About Pod</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
-          </Pressable>
+          </Pressable> */}
         </View>
 
         {/* Logout */}

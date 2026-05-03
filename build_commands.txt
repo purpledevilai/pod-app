@@ -25,6 +25,20 @@ Preview / internal distribution builds:
     npm run build:preview:all       # both platforms, preview profile
 
 
+Development build for iOS (install once, then iterate with `npx expo start`):
+
+    eas build --profile development --platform ios
+
+Produces a dev-client .ipa for internal distribution. Open the build's
+"Install" page in EAS on your device, install the dev client, then run:
+
+    npx expo start --dev-client
+
+Note: physical devices must be registered with your Apple Developer account.
+If you haven't yet, run `eas device:create` once and follow the prompts
+before building.
+
+
 Local dev:
 
     npx expo start                  # Metro bundler / dev client

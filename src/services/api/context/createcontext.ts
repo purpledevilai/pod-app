@@ -15,7 +15,7 @@ export async function createAgentContext(): Promise<CreateAgentContextResponse> 
         const response = await apiClient.post('/create-agent-context');
         const data = response.data as CreateAgentContextResponse;
 
-        console.log('[createAgentContext] Context created:', data.context_id);
+        console.log('[createAgentContext#####################################################] Context created:', data.context_id);
 
         return data;
     } catch (error) {
