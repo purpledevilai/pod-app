@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "11",
+      "buildNumber": "12",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "This app needs access to your microphone to enable voice conversations with the AI agent.",
         "NSCameraUsageDescription": "This app needs access to your camera for video calls.",
