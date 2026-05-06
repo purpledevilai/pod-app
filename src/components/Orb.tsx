@@ -1,8 +1,17 @@
-import { Canvas, Path, Skia } from '@shopify/react-native-skia';
+import { useTheme } from '@/src/providers/ThemeProvider';
+import {
+  BlurMask,
+  Canvas,
+  Circle,
+  ColorMatrix,
+  Group,
+  RadialGradient,
+  Turbulence,
+  vec,
+} from '@shopify/react-native-skia';
 import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
-  SharedValue,
   useDerivedValue,
   useFrameCallback,
   useSharedValue,
@@ -11,180 +20,173 @@ import {
 
 interface OrbProps {
   size?: number;
+  /**
+   * Base color. The orb derives a full gradient + cloud palette from this
+   * (lightened tints for highlights, darkened shades for depth).
+   * Defaults to the theme primary.
+   */
   color?: string;
-  /** Audio level from the user's microphone (0-1) */
+  /**
+   * Audio level from the user's microphone (0-1). Currently ignored — the
+   * orb only reacts to the agent's voice — but kept on the API for
+   * backwards compatibility with existing call sites.
+   */
   userAudioLevel?: number;
   /** Audio level from the AI/agent (0-1) */
   aiAudioLevel?: number;
 }
 
-interface RingConfig {
-  // Ellipse shape
-  radiusX: number;
-  radiusY: number;
-  // Wave deformation
-  waves: Array<{
-    frequency: number; // how many bumps around the circle
-    amplitude: number; // how much the bump distorts the radius
-    speed: number; // how fast this wave animates
-    phase: number; // initial phase offset
-  }>;
-  // 3D tilt (makes it look like a tilted ring in space)
-  tiltX: number; // tilt around X axis (0 to 1, where 1 = 90 degrees)
-  tiltY: number; // tilt around Y axis
-}
+// --- color helpers --------------------------------------------------------
 
-interface RingPhysics {
-  // Direction: 1 = clockwise, -1 = counter-clockwise
-  direction: number;
-  // Base velocity when idle (radians/sec)
-  baseVelocity: number;
-  // Max velocity cap (radians/sec)
-  maxVelocity: number;
-  // Friction coefficient (0-1, higher = more friction, slows faster)
-  friction: number;
-  // How much audio accelerates this ring (radians/sec per audio unit)
-  audioAcceleration: number;
-  // Initial rotation offset
-  initialRotation: number;
-  // Audio mix: [aiWeight, userWeight] - how much each audio source affects this ring
-  audioMix: [number, number];
-}
-
-const NUM_POINTS = 80; // Number of points to draw each ring (more = smoother)
-
-/**
- * Generate a deformed ellipse path using sine wave superposition
- * @param rotation - Current rotation angle in radians (physics-driven)
- * @param time - Animation time for wave movement
- * @param intensity - Multiplier for wave amplitude (1.0 = normal, higher = more intense)
- * @param waveSpeed - Multiplier for wave animation speed (1.0 = normal)
- */
-function generateRingPath(
-  centerX: number,
-  centerY: number,
-  config: RingConfig,
-  rotation: number,
-  time: number,
-  intensity: number = 1,
-  waveSpeed: number = 1
-): ReturnType<typeof Skia.Path.Make> {
-  'worklet';
-  const path = Skia.Path.Make();
-
-  const cosRotation = Math.cos(rotation);
-  const sinRotation = Math.sin(rotation);
-
-  for (let i = 0; i <= NUM_POINTS; i++) {
-    const angle = (i / NUM_POINTS) * Math.PI * 2;
-
-    // Calculate wave deformation - sum of multiple sine waves
-    // Amplitude is scaled by intensity (audio level)
-    let radiusOffset = 0;
-    for (const wave of config.waves) {
-      radiusOffset +=
-        Math.sin(angle * wave.frequency + time * wave.speed * waveSpeed + wave.phase) *
-        wave.amplitude * intensity;
-    }
-
-    // Base ellipse radius at this angle
-    const baseRadiusX = config.radiusX + radiusOffset;
-    const baseRadiusY = config.radiusY + radiusOffset * 0.7; // Slightly different Y deformation
-
-    // Calculate point on ellipse
-    let x = Math.cos(angle) * baseRadiusX;
-    let y = Math.sin(angle) * baseRadiusY;
-
-    // Apply 3D tilt effect (simple projection)
-    // TiltX compresses the Y axis (ring tilting toward/away from viewer)
-    // TiltY compresses the X axis (ring tilting left/right)
-    y *= 1 - config.tiltX * 0.8;
-    x *= 1 - config.tiltY * 0.3;
-
-    // Apply rotation
-    const rotatedX = x * cosRotation - y * sinRotation;
-    const rotatedY = x * sinRotation + y * cosRotation;
-
-    const finalX = centerX + rotatedX;
-    const finalY = centerY + rotatedY;
-
-    if (i === 0) {
-      path.moveTo(finalX, finalY);
-    } else {
-      path.lineTo(finalX, finalY);
-    }
+function hexToRgb(hex: string): [number, number, number] {
+  let cleaned = hex.replace('#', '');
+  if (cleaned.length === 3) {
+    cleaned = cleaned
+      .split('')
+      .map((c) => c + c)
+      .join('');
   }
-
-  path.close();
-  return path;
+  const r = parseInt(cleaned.slice(0, 2), 16);
+  const g = parseInt(cleaned.slice(2, 4), 16);
+  const b = parseInt(cleaned.slice(4, 6), 16);
+  return [r, g, b];
 }
+
+function rgbToHsl(
+  r: number,
+  g: number,
+  b: number
+): [number, number, number] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      default:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+  return [h * 360, s, l];
+}
+
+function hslToHex(h: number, s: number, l: number, alpha?: number): string {
+  const hh = ((h % 360) + 360) % 360;
+  const ss = Math.max(0, Math.min(1, s));
+  const ll = Math.max(0, Math.min(1, l));
+  const c = (1 - Math.abs(2 * ll - 1)) * ss;
+  const hp = hh / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  let r1 = 0;
+  let g1 = 0;
+  let b1 = 0;
+  if (hp < 1) {
+    r1 = c;
+    g1 = x;
+  } else if (hp < 2) {
+    r1 = x;
+    g1 = c;
+  } else if (hp < 3) {
+    g1 = c;
+    b1 = x;
+  } else if (hp < 4) {
+    g1 = x;
+    b1 = c;
+  } else if (hp < 5) {
+    r1 = x;
+    b1 = c;
+  } else {
+    r1 = c;
+    b1 = x;
+  }
+  const m = ll - c / 2;
+  const r = Math.round((r1 + m) * 255);
+  const g = Math.round((g1 + m) * 255);
+  const b = Math.round((b1 + m) * 255);
+  const toHex = (n: number) => n.toString(16).padStart(2, '0');
+  if (alpha !== undefined) {
+    const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255);
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}${toHex(a)}`;
+  }
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+interface OrbPalette {
+  highlight: string; // near-white tint (top of base gradient)
+  light: string; // light tint
+  mid: string; // the input color (or close to it)
+  dark: string; // darker shade
+  deep: string; // deepest shade at the orb's far edge
+  cloudTint: string; // tint applied to the cloud noise (lightest tint)
+}
+
+function buildPalette(color: string): OrbPalette {
+  const [r, g, b] = hexToRgb(color);
+  const [h, s] = rgbToHsl(r, g, b);
+  // Normalize saturation so very dull colors still produce a visible gradient.
+  const sat = Math.max(0.45, s);
+  return {
+    highlight: hslToHex(h, Math.min(0.4, sat * 0.6), 0.96),
+    light: hslToHex(h, sat * 0.85, 0.82),
+    mid: hslToHex(h, sat, 0.55),
+    dark: hslToHex(h, sat, 0.32),
+    deep: hslToHex(h, sat * 0.9, 0.12),
+    cloudTint: hslToHex(h, Math.min(0.35, sat * 0.5), 0.95),
+  };
+}
+
+// --- component ------------------------------------------------------------
 
 export const Orb: React.FC<OrbProps> = ({
   size = 120,
-  color = '#10B981',
-  userAudioLevel = 0,
+  color,
   aiAudioLevel = 0,
 }) => {
-  // Shared value for animation time (used for wave animation)
+  const theme = useTheme();
+  const baseColor = color ?? theme.colors.primary;
+
+  const palette = useMemo(() => buildPalette(baseColor), [baseColor]);
+
+  // Convert the cloud tint's RGB into the ColorMatrix "add" channels so the
+  // turbulence noise is colored toward the palette's lightest tone instead of
+  // pure white.
+  const cloudMatrix = useMemo(() => {
+    const [cr, cg, cb] = hexToRgb(palette.cloudTint);
+    const rN = cr / 255;
+    const gN = cg / 255;
+    const bN = cb / 255;
+    return {
+      primary: [
+        0, 0, 0, 0, rN,
+        0, 0, 0, 0, gN,
+        0, 0, 0, 0, bN,
+        0.7, 0.7, 0.7, 0, -0.55,
+      ],
+      secondary: [
+        0, 0, 0, 0, rN,
+        0, 0, 0, 0, gN,
+        0, 0, 0, 0, bN,
+        0.8, 0.8, 0.8, 0, -0.65,
+      ],
+    };
+  }, [palette.cloudTint]);
+
   const time = useSharedValue(0);
-
-  // Smoothed audio levels using spring animation for fluid response
-  const smoothUserLevel = useSharedValue(0);
   const smoothAiLevel = useSharedValue(0);
-
-  // Physics state for each ring: rotation (angle) and velocity (angular speed)
-  const ring1Rotation = useSharedValue(0);
-  const ring1Velocity = useSharedValue(0.3); // Start with base velocity
-  const ring2Rotation = useSharedValue(Math.PI / 3);
-  const ring2Velocity = useSharedValue(0.4);
-  const ring3Rotation = useSharedValue((Math.PI * 2) / 3);
-  const ring3Velocity = useSharedValue(0.5);
-
-  // Physics configuration for each ring
-  const ringPhysics = useMemo<RingPhysics[]>(
-    () => [
-      {
-        // Ring 1 - Outer ring, slow and heavy, responds more to AI
-        direction: 1,
-        baseVelocity: 0.3,
-        maxVelocity: 4.0,
-        friction: 2.0, // Lower = less friction, slower decay
-        audioAcceleration: 8.0,
-        initialRotation: 0,
-        audioMix: [0.7, 0.3], // [AI weight, User weight]
-      },
-      {
-        // Ring 2 - Middle ring, medium speed, opposite direction, balanced response
-        direction: -1,
-        baseVelocity: 0.4,
-        maxVelocity: 5.0,
-        friction: 2.5,
-        audioAcceleration: 10.0,
-        initialRotation: Math.PI / 3,
-        audioMix: [0.5, 0.5],
-      },
-      {
-        // Ring 3 - Inner ring, faster and lighter, responds more to user
-        direction: 1,
-        baseVelocity: 0.5,
-        maxVelocity: 6.0,
-        friction: 3.0, // Higher friction = snappier response
-        audioAcceleration: 12.0,
-        initialRotation: (Math.PI * 2) / 3,
-        audioMix: [0.3, 0.7],
-      },
-    ],
-    []
-  );
-
-  // Update smoothed audio levels when props change
-  useEffect(() => {
-    smoothUserLevel.value = withSpring(userAudioLevel, {
-      damping: 15,
-      stiffness: 150,
-      mass: 0.5,
-    });
-  }, [userAudioLevel, smoothUserLevel]);
 
   useEffect(() => {
     smoothAiLevel.value = withSpring(aiAudioLevel, {
@@ -194,162 +196,83 @@ export const Orb: React.FC<OrbProps> = ({
     });
   }, [aiAudioLevel, smoothAiLevel]);
 
-  // Physics simulation runs every frame
   useFrameCallback((frameInfo) => {
     if (frameInfo.timeSincePreviousFrame === null) return;
-
-    const dt = frameInfo.timeSincePreviousFrame / 1000; // Delta time in seconds
+    const dt = frameInfo.timeSincePreviousFrame / 1000;
     time.value += dt;
-
-    // Helper function to update ring physics
-    const updateRingPhysics = (
-      rotation: SharedValue<number>,
-      velocity: SharedValue<number>,
-      physics: RingPhysics
-    ) => {
-      'worklet';
-      // Calculate combined audio level based on this ring's mix
-      const audioLevel =
-        smoothAiLevel.value * physics.audioMix[0] +
-        smoothUserLevel.value * physics.audioMix[1];
-
-      // Apply friction (exponential decay toward base velocity)
-      // velocity approaches baseVelocity over time when no audio
-      const targetVelocity = physics.baseVelocity + audioLevel * physics.audioAcceleration;
-      
-      // Exponential interpolation toward target velocity
-      // friction acts as the rate of approach (higher = faster approach)
-      const frictionFactor = 1 - Math.exp(-physics.friction * dt);
-      velocity.value = velocity.value + (targetVelocity - velocity.value) * frictionFactor;
-
-      // Clamp velocity to max (always positive, direction is separate)
-      velocity.value = Math.min(velocity.value, physics.maxVelocity);
-      velocity.value = Math.max(velocity.value, physics.baseVelocity * 0.5); // Never go below half base
-
-      // Update rotation based on velocity and direction
-      rotation.value += velocity.value * physics.direction * dt;
-    };
-
-    // Update physics for each ring
-    updateRingPhysics(ring1Rotation, ring1Velocity, ringPhysics[0]);
-    updateRingPhysics(ring2Rotation, ring2Velocity, ringPhysics[1]);
-    updateRingPhysics(ring3Rotation, ring3Velocity, ringPhysics[2]);
   });
 
-  // Ring visual configurations (shape and waves)
-  const ringConfigs = useMemo<RingConfig[]>(
-    () => [
-      {
-        // Ring 1 - Largest, gentle waves
-        radiusX: size * 0.45,
-        radiusY: size * 0.45,
-        tiltX: 0.3,
-        tiltY: 0.1,
-        waves: [
-          { frequency: 3, amplitude: size * 0.03, speed: 1.2, phase: 0 },
-          { frequency: 5, amplitude: size * 0.02, speed: 1.8, phase: Math.PI / 3 },
-          { frequency: 7, amplitude: size * 0.01, speed: 2.5, phase: Math.PI / 2 },
-        ],
-      },
-      {
-        // Ring 2 - Medium, more chaotic waves
-        radiusX: size * 0.38,
-        radiusY: size * 0.35,
-        tiltX: 0.5,
-        tiltY: 0.2,
-        waves: [
-          { frequency: 3, amplitude: size * 0.035, speed: 1.5, phase: Math.PI / 4 },
-          { frequency: 5, amplitude: size * 0.02, speed: 2.2, phase: 0 },
-          { frequency: 7, amplitude: size * 0.01, speed: 3.0, phase: Math.PI },
-        ],
-      },
-      {
-        // Ring 3 - Smallest, tight waves
-        radiusX: size * 0.32,
-        radiusY: size * 0.28,
-        tiltX: 0.7,
-        tiltY: 0.15,
-        waves: [
-          { frequency: 3, amplitude: size * 0.025, speed: 2.0, phase: Math.PI / 6 },
-          { frequency: 5, amplitude: size * 0.015, speed: 2.8, phase: Math.PI / 2 },
-          { frequency: 7, amplitude: size * 0.008, speed: 3.5, phase: 0 },
-        ],
-      },
-    ],
-    [size]
-  );
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = size * 0.4;
 
-  const centerX = size / 2;
-  const centerY = size / 2;
+  const orbTransform = useDerivedValue(() => {
+    const scale = 1 + smoothAiLevel.value * 0.08;
+    return [{ scale }];
+  });
 
-  // Audio intensity settings for wave deformation
-  const BASE_INTENSITY = 1.0;
-  const AUDIO_INTENSITY_MULTIPLIER = 3.0;
-  const WAVE_SPEED_BOOST = 1.5;
+  const cloudTransform = useDerivedValue(() => {
+    const audioBoost = 1 + smoothAiLevel.value * 4;
+    return [{ rotate: time.value * 0.12 * audioBoost }];
+  });
 
-  // Create animated paths for each ring
-  const ring1Path = useDerivedValue(() => {
-    const audioLevel = smoothAiLevel.value * 0.7 + smoothUserLevel.value * 0.3;
-    const intensity = BASE_INTENSITY + audioLevel * AUDIO_INTENSITY_MULTIPLIER;
-    const waveSpeed = 1 + audioLevel * (WAVE_SPEED_BOOST - 1);
-    return generateRingPath(
-      centerX, centerY, ringConfigs[0],
-      ring1Rotation.value, time.value, intensity, waveSpeed
-    );
-  }, [ring1Rotation, time, smoothAiLevel, smoothUserLevel]);
-
-  const ring2Path = useDerivedValue(() => {
-    const audioLevel = smoothAiLevel.value * 0.5 + smoothUserLevel.value * 0.5;
-    const intensity = BASE_INTENSITY + audioLevel * AUDIO_INTENSITY_MULTIPLIER;
-    const waveSpeed = 1 + audioLevel * (WAVE_SPEED_BOOST - 1);
-    return generateRingPath(
-      centerX, centerY, ringConfigs[1],
-      ring2Rotation.value, time.value, intensity, waveSpeed
-    );
-  }, [ring2Rotation, time, smoothAiLevel, smoothUserLevel]);
-
-  const ring3Path = useDerivedValue(() => {
-    const audioLevel = smoothAiLevel.value * 0.3 + smoothUserLevel.value * 0.7;
-    const intensity = BASE_INTENSITY + audioLevel * AUDIO_INTENSITY_MULTIPLIER;
-    const waveSpeed = 1 + audioLevel * (WAVE_SPEED_BOOST - 1);
-    return generateRingPath(
-      centerX, centerY, ringConfigs[2],
-      ring3Rotation.value, time.value, intensity, waveSpeed
-    );
-  }, [ring3Rotation, time, smoothAiLevel, smoothUserLevel]);
+  const cloudTransformAlt = useDerivedValue(() => {
+    const audioBoost = 1 + smoothAiLevel.value * 3;
+    return [{ rotate: -time.value * 0.08 * audioBoost }];
+  });
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Canvas style={{ width: size, height: size }}>
-        {/* Ring 1 */}
-        <Path
-          path={ring1Path}
-          color={color}
-          style="stroke"
-          strokeWidth={2}
-          strokeCap="round"
-          strokeJoin="round"
-        />
-        {/* Ring 2 */}
-        <Path
-          path={ring2Path}
-          color={color}
-          style="stroke"
-          strokeWidth={2}
-          strokeCap="round"
-          strokeJoin="round"
-          opacity={0.8}
-        />
-        {/* Ring 3 */}
-        <Path
-          path={ring3Path}
-          color={color}
-          style="stroke"
-          strokeWidth={2}
-          strokeCap="round"
-          strokeJoin="round"
-          opacity={0.6}
-        />
+        <Group origin={vec(cx, cy)} transform={orbTransform}>
+          {/* Base spherical gradient: light highlight to deep rim */}
+          <Circle cx={cx} cy={cy} r={radius}>
+            <RadialGradient
+              c={vec(cx - radius * 0.25, cy - radius * 0.35)}
+              r={radius * 1.5}
+              colors={[
+                palette.highlight,
+                palette.light,
+                palette.mid,
+                palette.dark,
+                palette.deep,
+              ]}
+              positions={[0, 0.18, 0.55, 0.9, 1]}
+            />
+          </Circle>
+
+          {/* Cloud overlay drifting slowly across the orb. */}
+          <Group origin={vec(cx, cy)} transform={cloudTransform}>
+            <Circle cx={cx} cy={cy} r={radius} opacity={0.55}>
+              <Turbulence freqX={0.018} freqY={0.018} octaves={4} seed={3} />
+              <ColorMatrix matrix={cloudMatrix.primary} />
+            </Circle>
+          </Group>
+
+          {/* Finer counter-rotating cloud layer for depth. */}
+          <Group origin={vec(cx, cy)} transform={cloudTransformAlt}>
+            <Circle cx={cx} cy={cy} r={radius} opacity={0.3}>
+              <Turbulence freqX={0.04} freqY={0.04} octaves={3} seed={11} />
+              <ColorMatrix matrix={cloudMatrix.secondary} />
+            </Circle>
+          </Group>
+
+          {/* Specular-style highlight to sell the spherical look */}
+          <Circle
+            cx={cx - radius * 0.3}
+            cy={cy - radius * 0.4}
+            r={radius * 0.35}
+            opacity={0.55}
+          >
+            <RadialGradient
+              c={vec(cx - radius * 0.3, cy - radius * 0.4)}
+              r={radius * 0.35}
+              colors={['#ffffffDD', '#ffffff00']}
+            />
+            <BlurMask blur={6} style="normal" />
+          </Circle>
+
+        </Group>
       </Canvas>
     </View>
   );
