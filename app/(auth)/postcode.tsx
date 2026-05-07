@@ -8,6 +8,7 @@ import { useTheme } from '@/src/providers/ThemeProvider';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { router } from 'expo-router';
 import { observer } from 'mobx-react-lite';
+import { useRef } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -21,6 +22,7 @@ export default observer(function PostcodeScreen() {
     const { copy } = useContent();
     const acStore = useStores().accountCreationStore;
     const headerHeight = useHeaderHeight();
+    const scrollRef = useRef<ScrollView>(null);
 
     async function onSubmit() {
         if (!acStore.postcodeValid || acStore.councilLookUpLoading) return;
@@ -38,6 +40,7 @@ export default observer(function PostcodeScreen() {
         >
             <View style={styles.container}>
                 <ScrollView
+                    ref={scrollRef}
                     keyboardShouldPersistTaps="handled"
                     contentContainerStyle={[
                         styles.scrollContent,
@@ -58,6 +61,7 @@ export default observer(function PostcodeScreen() {
                         <Input
                             value={acStore.postcode || ''}
                             onChangeText={acStore.setPostcode}
+                            onFocus={() => scrollRef.current?.scrollToEnd({ animated: true })}
                             autoCapitalize="characters"
                             autoCorrect={false}
                             keyboardType="numeric"

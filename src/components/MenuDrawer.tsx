@@ -131,9 +131,9 @@ export const MenuDrawer = observer(({ isOpen, onClose }: MenuDrawerProps) => {
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </Pressable>
 
-          <Pressable style={styles.menuItem} onPress={() => console.log('About Pod pressed')}>
+          <Pressable style={styles.menuItem} onPress={() => console.log('About pod pressed')}>
             <Ionicons name="information-circle-outline" size={24} color={colors.text} />
-            <Text style={[styles.menuItemText, { color: colors.text }]}>About Pod</Text>
+            <Text style={[styles.menuItemText, { color: colors.text }]}>About pod</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </Pressable> */}
         </View>

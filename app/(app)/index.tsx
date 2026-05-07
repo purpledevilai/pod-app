@@ -160,7 +160,7 @@ export default observer(function Home() {
   const getStatusLabel = () => {
     if (isCreatingContext) return "Starting...";
     if (!currentContextId) return "Start Conversation";
-    if (!agentRoomStore.isTranscriptionReady) return "Waking Pod Up...";
+    if (!agentRoomStore.isTranscriptionReady) return "Waking pod up...";
     if (!agentRoomStore.hasCalibrated) return "Calibrating...";
     return "Getting ready...";
   };

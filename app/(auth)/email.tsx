@@ -26,6 +26,7 @@ export default observer(function EmailScreen() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | undefined>();
     const inputRef = useRef<TextInput>(null);
+    const scrollRef = useRef<ScrollView>(null);
 
     const headerHeight = useHeaderHeight();
     const valid = isEmail(email);
@@ -54,6 +55,7 @@ export default observer(function EmailScreen() {
         >
             <View style={styles.container}>
                 <ScrollView
+                    ref={scrollRef}
                     keyboardShouldPersistTaps="handled"
                     contentContainerStyle={[
                         styles.scrollContent,
@@ -75,6 +77,7 @@ export default observer(function EmailScreen() {
                             ref={inputRef}
                             value={email}
                             onChangeText={setEmail}
+                            onFocus={() => scrollRef.current?.scrollToEnd({ animated: true })}
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardType="email-address"

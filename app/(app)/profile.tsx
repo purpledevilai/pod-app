@@ -53,7 +53,7 @@ const POD_OPTIONS: { key: PodConfiguration; label: string; image?: ImageSourcePr
     },
     {
         key: 'none',
-        label: 'No Pod',
+        label: 'No pod',
     },
 ];
 
@@ -167,7 +167,7 @@ export default observer(function ProfileScreen() {
             });
             authStore.user = updated;
             resetEditState();
-            showSuccess('Pod configuration updated.');
+            showSuccess('pod configuration updated.');
         } catch {
             setError('Failed to save changes.');
         } finally {
@@ -356,7 +356,7 @@ export default observer(function ProfileScreen() {
                 <View style={[styles.section, { borderColor: colors.muted }]}>
                     <View style={styles.sectionHeader}>
                         <View>
-                            <Text weight="semibold" size={14} color={colors.muted}>Pod Configuration</Text>
+                            <Text weight="semibold" size={14} color={colors.muted}>pod Configuration</Text>
                             <Text size={16} style={{ marginTop: 4 }}>{podLabel(user?.pod_configuration || 'none')}</Text>
                         </View>
                         {editingSection !== 'pod' && (

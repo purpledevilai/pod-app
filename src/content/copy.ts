@@ -2,7 +2,7 @@
 export const copy = {
     screens: {
         start: {
-            tagline: 'Everything\nbecomes\nsomething.',
+            tagline: 'Everything\nBecomes\nSomething',
             cta: 'Get Started',
         },
         welcome: {
@@ -49,7 +49,9 @@ No confusion. No hesitation. Just quick answers that help you sort correctly wit
 Over time, those small decisions become second nature. And when recycling becomes a habit, your impact becomes real.
 
 And it all starts with you \u2014 at the \u201CPoint of Disposal\u201D.
+
 That\u2019s what pod stands for.
+
 Because when you know what to do in the moment, you help to turn waste into valuable resource, contribute to our circular economy and create a sustainable environment for our future.
 `,
             ctaContinue: 'Got it \u2014 show me how',
@@ -75,11 +77,11 @@ Because when you know what to do in the moment, you help to turn waste into valu
             ctaSubmitting: "Loading\u2026"
         },
         podConfiguration: {
-            title: "Do you have a Pod?",
-            subtitle: "Select your Pod configuration, or skip if you don\u2019t have one.",
+            title: "Do you have a pod?",
+            subtitle: "Select your pod configuration, or skip if you don\u2019t have one.",
             ctaContinue: "Create account",
             ctaSubmitting: "Creating account\u2026",
-            ctaSkip: "I don\u2019t have a Pod"
+            ctaSkip: "I don\u2019t have a pod"
         }
     },
 } as const;
