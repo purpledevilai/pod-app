@@ -16,6 +16,7 @@ export default function AppLayout() {
       <Stack.Screen name="landing" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="bin-config-preview" />
+      <Stack.Screen name="levels" />
     </Stack>
   );
 }

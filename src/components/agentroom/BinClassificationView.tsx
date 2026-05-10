@@ -72,7 +72,7 @@ function getPodBinKey(podConfiguration: PodConfiguration, color: string): PodBin
     return undefined;
 }
 
-const POD_IMAGE_SIZE = 340;
+const POD_IMAGE_SIZE = 480;
 
 interface BinClassificationViewProps {
     color: string;
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     binImage: {
-        width: 180,
-        height: 180,
+        width: 240,
+        height: 240,
     },
 });

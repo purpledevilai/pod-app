@@ -119,6 +119,12 @@ export const MenuDrawer = observer(({ isOpen, onClose }: MenuDrawerProps) => {
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </Pressable>
 
+          <Pressable style={styles.menuItem} onPress={() => { onClose(); router.push('/(app)/levels'); }}>
+            <Ionicons name="trophy-outline" size={24} color={colors.text} />
+            <Text style={[styles.menuItemText, { color: colors.text }]}>My Progress</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.text} />
+          </Pressable>
+
           {/* <Pressable style={styles.menuItem} onPress={() => console.log('Community pressed')}>
             <Ionicons name="globe-outline" size={24} color={colors.text} />
             <Text style={[styles.menuItemText, { color: colors.text }]}>Community</Text>
