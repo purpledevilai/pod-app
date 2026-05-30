@@ -125,23 +125,11 @@ export const MenuDrawer = observer(({ isOpen, onClose }: MenuDrawerProps) => {
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </Pressable>
 
-          {/* <Pressable style={styles.menuItem} onPress={() => console.log('Community pressed')}>
+          <Pressable style={styles.menuItem} onPress={() => { onClose(); router.push('/(app)/community'); }}>
             <Ionicons name="globe-outline" size={24} color={colors.text} />
             <Text style={[styles.menuItemText, { color: colors.text }]}>Community</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </Pressable>
-
-          <Pressable style={styles.menuItem} onPress={() => console.log('My Council pressed')}>
-            <Ionicons name="location-outline" size={24} color={colors.text} />
-            <Text style={[styles.menuItemText, { color: colors.text }]}>My Council</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.text} />
-          </Pressable>
-
-          <Pressable style={styles.menuItem} onPress={() => console.log('About pod pressed')}>
-            <Ionicons name="information-circle-outline" size={24} color={colors.text} />
-            <Text style={[styles.menuItemText, { color: colors.text }]}>About pod</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.text} />
-          </Pressable> */}
         </View>
 
         {/* Logout */}
