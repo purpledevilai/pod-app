@@ -10,25 +10,21 @@ import Animated, {
 } from 'react-native-reanimated';
 
 interface AIMessage {
-    sentence: string;
-    sentence_id: string;
+    text: string;
+    message_id: string;
 }
 
 interface AIMessageDisplayProps {
     messages: AIMessage[];
-    currentlySpeakingSentenceId: string | undefined;
     visible: boolean;
 }
 
 /**
- * AIMessageDisplay - Shows AI messages below the orb
- * Highlights the currently speaking sentence in bold
- * Auto-scrolls to active message
- * Smoothly animates in/out to prevent UI jumps
+ * AIMessageDisplay - Shows the agent's final transcripts below the orb.
+ * Auto-scrolls to the latest message and animates in/out to prevent UI jumps.
  */
 export const AIMessageDisplay = ({ 
     messages, 
-    currentlySpeakingSentenceId,
     visible 
 }: AIMessageDisplayProps) => {
     const scrollViewRef = useRef<ScrollView>(null);
@@ -68,15 +64,15 @@ export const AIMessageDisplay = ({
         }
     }, [visible]);
 
-    // Auto-scroll to the currently speaking sentence
+    // Auto-scroll to the latest message
     useEffect(() => {
-        if (currentlySpeakingSentenceId && scrollViewRef.current) {
+        if (messages.length > 0 && scrollViewRef.current) {
             // Small delay to ensure the message is rendered
             setTimeout(() => {
                 scrollViewRef.current?.scrollToEnd({ animated: true });
             }, 100);
         }
-    }, [currentlySpeakingSentenceId]);
+    }, [messages.length]);
 
     // Animated style combining opacity, translation, and scale
     const animatedStyle = useAnimatedStyle(() => {
@@ -101,22 +97,18 @@ export const AIMessageDisplay = ({
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
             >
-                {messages.map(({ sentence, sentence_id }) => {
-                    const isSpeaking = currentlySpeakingSentenceId === sentence_id;
+                {messages.map(({ text, message_id }) => {
                     return (
                         <View 
-                            key={sentence_id}
+                            key={message_id}
                             style={styles.messageContainer}
                         >
                             <Text
                                 size={16}
-                                weight={isSpeaking ? 'semibold' : 'regular'}
-                                style={[
-                                    styles.message,
-                                    !isSpeaking && styles.inactiveMessage
-                                ]}
+                                weight={'regular'}
+                                style={styles.message}
                             >
-                                {sentence}
+                                {text}
                             </Text>
                         </View>
                     );

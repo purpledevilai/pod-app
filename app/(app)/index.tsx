@@ -133,9 +133,9 @@ export default observer(function Home() {
     }
   };
 
-  // Get inbound audio stream from first peer connection
-  const inboundAudioStream = currentContextId && agentRoomStore.roomConnection
-    ? Object.values(agentRoomStore.roomConnection.peerConnections)[0]?.inboundMediaStream
+  // Get inbound audio stream from the realtime connection
+  const inboundAudioStream = currentContextId
+    ? agentRoomStore.realtimeConnection?.inboundMediaStream
     : undefined;
 
   const topBar = (
@@ -158,11 +158,8 @@ export default observer(function Home() {
 
   // Determine the loading status label
   const getStatusLabel = () => {
-    if (isCreatingContext) return "Starting...";
-    if (!currentContextId) return "Start Conversation";
-    if (!agentRoomStore.isTranscriptionReady) return "Waking pod up...";
-    if (!agentRoomStore.hasCalibrated) return "Calibrating...";
-    return "Getting ready...";
+    if (isCreatingContext || (currentContextId && !agentRoomStore.isReady)) return "Starting...";
+    return "Start Conversation";
   };
   const isWaiting = isCreatingContext || (currentContextId && !agentRoomStore.isReady);
 
@@ -198,21 +195,6 @@ export default observer(function Home() {
       {/* Audio Player (hidden, plays agent audio) */}
       <AudioPlayer stream={inboundAudioStream} />
 
-      {/* Debug Status Messages */}
-      {/* <ScrollView 
-        style={styles.debugContainer}
-        contentContainerStyle={styles.debugContent}
-      >
-        <DebugStatus
-          contextId={currentContextId}
-          isConnecting={agentRoomStore.isConnecting}
-          isConnected={agentRoomStore.isConnected}
-          isCalibrating={agentRoomStore.isCalibrating}
-          initializationError={agentRoomStore.initializationError}
-          audioMuted={agentRoomStore.audioMuted}
-        />
-      </ScrollView> */}
-
       {/* Main Conversation UI */}
       <Pressable 
         style={styles.conversationContainer}
@@ -223,7 +205,6 @@ export default observer(function Home() {
         <View style={styles.aiMessagesContainer}>
           <AIMessageDisplay
             messages={agentRoomStore.aiMessages}
-            currentlySpeakingSentenceId={agentRoomStore.currentlySpeakingSentenceId}
             visible={agentRoomStore.showAIMessages}
           />
         </View>
@@ -256,7 +237,6 @@ export default observer(function Home() {
           {!agentRoomStore.binClassificationShouldShow && !agentRoomStore.rewardPanelShouldShow && (
             <TranscriptionDisplay 
               messages={agentRoomStore.userMessages}
-              currentMessageId={agentRoomStore.currentUserMessageId}
             />
           )}
         </View>
@@ -295,77 +275,6 @@ export default observer(function Home() {
       </SlideUpView>
       <MenuDrawer isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
     </SafeAreaView>
-  );
-});
-
-/**
- * DebugStatus - Shows connection status and other debug info
- */
-const DebugStatus = observer(({
-  contextId,
-  isConnecting,
-  isConnected,
-  isCalibrating,
-  initializationError,
-  audioMuted
-}: {
-  contextId: string;
-  isConnecting: boolean;
-  isConnected: boolean;
-  isCalibrating: boolean;
-  initializationError?: string;
-  audioMuted: boolean;
-}) => {
-  const { colors } = useTheme();
-
-  const getStatusColor = () => {
-    if (initializationError) return '#DC2626'; // Red
-    if (isConnected) return '#10B981'; // Green
-    if (isConnecting) return '#F59E0B'; // Yellow
-    return colors.muted; // Gray
-  };
-
-  const getStatusText = () => {
-    if (initializationError) return `Error: ${initializationError}`;
-    if (isCalibrating) return 'Calibrating...';
-    if (isConnected) return 'Connected';
-    if (isConnecting) return 'Connecting...';
-    return 'Disconnected';
-  };
-
-  return (
-    <View style={styles.debugBox}>
-      <Text weight="semibold" size={12} style={{ color: colors.muted }}>
-        Debug Info
-      </Text>
-
-      <View style={styles.debugRow}>
-        <Text weight="regular" size={11} style={{ color: colors.muted }}>
-          Context ID:
-        </Text>
-        <Text weight="semibold" size={11} style={{ color: colors.text }}>
-          {contextId.substring(0, 8)}...
-        </Text>
-      </View>
-
-      <View style={styles.debugRow}>
-        <Text weight="regular" size={11} style={{ color: colors.muted }}>
-          Status:
-        </Text>
-        <Text weight="semibold" size={11} style={{ color: getStatusColor() }}>
-          {getStatusText()}
-        </Text>
-      </View>
-
-      <View style={styles.debugRow}>
-        <Text weight="regular" size={11} style={{ color: colors.muted }}>
-          Microphone:
-        </Text>
-        <Text weight="semibold" size={11} style={{ color: audioMuted ? '#DC2626' : '#10B981' }}>
-          {audioMuted ? 'Muted' : 'Active'}
-        </Text>
-      </View>
-    </View>
   );
 });
 

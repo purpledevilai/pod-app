@@ -16,14 +16,13 @@ interface UserMessage {
 
 interface TranscriptionDisplayProps {
     messages: UserMessage[];
-    currentMessageId: string | undefined;
 }
 
 /**
- * TranscriptionDisplay - Shows the user's detected speech history
- * Highlights the currently active message and auto-scrolls to it
+ * TranscriptionDisplay - Shows the user's final speech transcripts history
+ * and auto-scrolls to the latest.
  */
-export const TranscriptionDisplay = ({ messages, currentMessageId }: TranscriptionDisplayProps) => {
+export const TranscriptionDisplay = ({ messages }: TranscriptionDisplayProps) => {
     const scrollViewRef = useRef<ScrollView>(null);
     
     // Shared values for animations
@@ -65,14 +64,14 @@ export const TranscriptionDisplay = ({ messages, currentMessageId }: Transcripti
         }
     }, [hasMessages]);
 
-    // Auto-scroll to the current active message
+    // Auto-scroll to the latest message
     useEffect(() => {
-        if (currentMessageId && scrollViewRef.current) {
+        if (messages.length > 0 && scrollViewRef.current) {
             setTimeout(() => {
                 scrollViewRef.current?.scrollToEnd({ animated: true });
             }, 100);
         }
-    }, [currentMessageId, messages]);
+    }, [messages.length]);
 
     // Animated style combining opacity, translation, and scale
     const animatedStyle = useAnimatedStyle(() => {
@@ -101,7 +100,6 @@ export const TranscriptionDisplay = ({ messages, currentMessageId }: Transcripti
                 showsVerticalScrollIndicator={false}
             >
                 {visibleMessages.map(({ text, message_id }) => {
-                    const isActive = currentMessageId === message_id;
                     return (
                         <View 
                             key={message_id}
@@ -109,11 +107,8 @@ export const TranscriptionDisplay = ({ messages, currentMessageId }: Transcripti
                         >
                             <Text 
                                 size={16} 
-                                weight={isActive ? 'semibold' : 'regular'}
-                                style={[
-                                    styles.text,
-                                    !isActive && styles.inactiveMessage
-                                ]}
+                                weight={'regular'}
+                                style={styles.text}
                             >
                                 {text}
                             </Text>
